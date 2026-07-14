@@ -44,7 +44,7 @@ export default function RootLayout({
                       <circle cx="12" cy="12" r="10"></circle>
                       <polyline points="12 6 12 12 16 14"></polyline>
                     </svg>
-                    Buka Setiap Hari: 19.00 - 00.00 WIB
+                    Buka: 14.00 - 18.00 & 19.30 - 00.00 WIB
                   </p>
                   <p style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', color: 'var(--text-main)', fontWeight: 500 }}>
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--primary)', flexShrink: 0 }}>
@@ -87,7 +87,10 @@ export default function RootLayout({
                       <circle cx="12" cy="12" r="10"></circle>
                       <polyline points="12 6 12 12 16 14"></polyline>
                     </svg>
-                    <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>19.00 - 24.00 WIB</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                      <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>Sesi 1: 14.00 - 18.00 WIB</span>
+                      <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>Sesi 2: 19.30 - 00.00 WIB</span>
+                    </div>
                   </li>
                 </ul>
               </div>
@@ -117,7 +120,7 @@ export default function RootLayout({
             
             <div className="footer-bottom-bar">
               <p>&copy; {new Date().getFullYear()} Ghurus Barber Clinic. All rights reserved.</p>
-              <div className="footer-bottom-links">
+              <div className="footer-bottom-links hide-on-mobile">
                 <a href="/admin" className="footer-bottom-link">Admin Portal</a>
                 <a href="/" className="footer-bottom-link">Booking Baru</a>
                 <a href="/booking-status" className="footer-bottom-link">Cek Status</a>

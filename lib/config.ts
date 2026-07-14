@@ -1,10 +1,20 @@
 // Konfigurasi Slot Waktu Booking Barbershop
-// Estimasi pangkas rambut: 20-30 menit per orang.
-// Jam Operasional: Malam (19.00 - 24.00 WIB)
+// Estimasi pangkas rambut: 30 menit per orang.
+// Jam Operasional: Dua Sesi (Sesi 1: 14.00 - 18.00 WIB & Sesi 2: 19.30 - 00.00 WIB)
 // Format penulisan jam menggunakan format Indonesia dengan tanda titik (.).
 
 export const TIME_SLOTS = [
-  "19.00",
+  // Sesi 1 (14.00 - 18.00 WIB)
+  "14.00",
+  "14.30",
+  "15.00",
+  "15.30",
+  "16.00",
+  "16.30",
+  "17.00",
+  "17.30",
+  
+  // Sesi 2 (19.30 - 00.00 WIB)
   "19.30",
   "20.00",
   "20.30",
@@ -13,7 +23,7 @@ export const TIME_SLOTS = [
   "22.00",
   "22.30",
   "23.00",
-  "23.30",
+  "23.30"
 ];
 
 /**
