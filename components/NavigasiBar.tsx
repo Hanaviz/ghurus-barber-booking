@@ -60,7 +60,7 @@ export default function NavigasiBar() {
             <Scissors size={24} />
             <span>Ghurus Barber Clinic</span>
             {isAdminActive && (
-              <span style={{ 
+              <span className="header-admin-badge" style={{ 
                 fontSize: '0.75rem', 
                 backgroundColor: 'rgba(197, 168, 128, 0.15)', 
                 color: 'var(--primary)', 
@@ -134,7 +134,7 @@ export default function NavigasiBar() {
             <Scissors size={20} />
             <span style={{ fontSize: '1.05rem' }}>Ghurus Barber Clinic</span>
             {isAdminActive && (
-              <span style={{ 
+              <span className="header-admin-badge" style={{ 
                 fontSize: '0.65rem', 
                 backgroundColor: 'rgba(197, 168, 128, 0.15)', 
                 color: 'var(--primary)', 

@@ -1003,7 +1003,8 @@ a {
     height: 20px !important;
   }
 
-  .hide-on-mobile {
+  .hide-on-mobile,
+  .header-admin-badge {
     display: none !important;
   }
 
