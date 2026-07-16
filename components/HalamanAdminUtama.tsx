@@ -2,13 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { loginAdmin, logoutAdmin, checkAdminSession } from '@/app/admin/actions';
-import { 
-  Lock, LogOut, Calendar, Clock, Trash2, Edit2, Plus, 
-  Phone, User, Check, X, AlertTriangle, RefreshCw 
-} from 'lucide-react';
+import { checkAdminSession, loginAdmin, logoutAdmin } from '@/app/admin/actions';
+import { CalendarRange, AlertCircle, RefreshCw } from 'lucide-react';
 
 import { TIME_SLOTS, isSlotPast } from '@/lib/config';
+import LoginForm from './admin/LoginForm';
+import DashboardHeader from './admin/DashboardHeader';
+import Toolbar from './admin/Toolbar';
+import BookingsTable from './admin/BookingsTable';
+import ManualBookingModal from './admin/ManualBookingModal';
+import RescheduleModal from './admin/RescheduleModal';
 
 interface Booking {
   id: string;
@@ -44,12 +47,11 @@ export default function HalamanAdminUtama() {
   // Auth States
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
-  const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isLoadingSession, setIsLoadingSession] = useState(true);
   const [isEnvConfigured, setIsEnvConfigured] = useState(true);
 
-  // Dashboard States
+  // Dashboard Data States
   const [filterDate, setFilterDate] = useState('');
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(false);
@@ -60,7 +62,12 @@ export default function HalamanAdminUtama() {
   const [manualWhatsapp, setManualWhatsapp] = useState('');
   const [manualDate, setManualDate] = useState('');
   const [manualTime, setManualTime] = useState('');
-  const [manualBookedTimes, setManualBookedTimes] = useState<string[]>([]);
+  
+  interface BookedSlot {
+    time: string;
+    name: string;
+  }
+  const [manualBookedSlots, setManualBookedSlots] = useState<BookedSlot[]>([]);
   const [isLoadingManualSlots, setIsLoadingManualSlots] = useState(false);
   const [isSavingManual, setIsSavingManual] = useState(false);
 
@@ -68,7 +75,7 @@ export default function HalamanAdminUtama() {
   const [activeReschedule, setActiveReschedule] = useState<Booking | null>(null);
   const [rescheduleDate, setRescheduleDate] = useState('');
   const [rescheduleTime, setRescheduleTime] = useState('');
-  const [rescheduleBookedTimes, setRescheduleBookedTimes] = useState<string[]>([]);
+  const [rescheduleBookedSlots, setRescheduleBookedSlots] = useState<BookedSlot[]>([]);
   const [isLoadingRescheduleSlots, setIsLoadingRescheduleSlots] = useState(false);
   const [isSavingReschedule, setIsSavingReschedule] = useState(false);
 
@@ -131,14 +138,20 @@ export default function HalamanAdminUtama() {
       try {
         const { data, error } = await supabase
           .from('bookings')
-          .select('booking_time')
+          .select('booking_time, name')
           .eq('booking_date', manualDate)
           .neq('status', 'Batal');
 
         if (error) throw error;
         if (data) {
-          const formatted = data.map((item: any) => item.booking_time ? item.booking_time.substring(0, 5).replace(':', '.') : '');
-          setManualBookedTimes(formatted);
+          const slots: BookedSlot[] = data.map((item: any) => {
+            const timeStr = item.booking_time;
+            return {
+              time: timeStr ? timeStr.substring(0, 5).replace(':', '.') : '',
+              name: item.name
+            };
+          }).filter(s => s.time !== '');
+          setManualBookedSlots(slots);
         }
       } catch (err) {
         console.error("Gagal memeriksa slot manual:", err);
@@ -158,18 +171,25 @@ export default function HalamanAdminUtama() {
       try {
         const { data, error } = await supabase
           .from('bookings')
-          .select('booking_time')
+          .select('booking_time, name')
           .eq('booking_date', rescheduleDate)
           .neq('status', 'Batal');
 
         if (error) throw error;
         if (data) {
-          const formatted = data.map((item: any) => item.booking_time ? item.booking_time.substring(0, 5).replace(':', '.') : '');
+          const slots: BookedSlot[] = data.map((item: any) => {
+            const timeStr = item.booking_time;
+            return {
+              time: timeStr ? timeStr.substring(0, 5).replace(':', '.') : '',
+              name: item.name
+            };
+          }).filter(s => s.time !== '');
+
           const currentFormattedTime = activeReschedule.booking_time.substring(0, 5).replace(':', '.');
           if (rescheduleDate === activeReschedule.booking_date) {
-            setRescheduleBookedTimes(formatted.filter(t => t !== currentFormattedTime));
+            setRescheduleBookedSlots(slots.filter(s => s.time !== currentFormattedTime));
           } else {
-            setRescheduleBookedTimes(formatted);
+            setRescheduleBookedSlots(slots);
           }
         }
       } catch (err) {
@@ -184,32 +204,35 @@ export default function HalamanAdminUtama() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoginError('');
+    if (!password) return;
     setIsLoggingIn(true);
-
     try {
-      const res = await loginAdmin(password);
-      if (res.success) {
+      const success = await loginAdmin(password);
+      if (success) {
         setIsAuthenticated(true);
+        setPassword('');
         window.dispatchEvent(new Event('admin-login-status-change'));
       } else {
-        setLoginError(res.error || 'Password salah.');
+        alert("Kata sandi salah!");
       }
-    } catch (err) {
-      setLoginError('Terjadi kesalahan koneksi server.');
+    } catch (err: any) {
+      alert("Terjadi kesalahan: " + err.message);
     } finally {
       setIsLoggingIn(false);
     }
   };
 
   const handleLogout = async () => {
-    await logoutAdmin();
-    setIsAuthenticated(false);
-    setPassword('');
-    window.dispatchEvent(new Event('admin-login-status-change'));
+    try {
+      await logoutAdmin();
+      setIsAuthenticated(false);
+      window.dispatchEvent(new Event('admin-login-status-change'));
+    } catch (err) {
+      console.error("Gagal logout:", err);
+    }
   };
 
-  const handleUpdateStatus = async (bookingId: string, newStatus: 'Menunggu' | 'Selesai' | 'Batal') => {
+  const handleUpdateStatus = async (bookingId: string, newStatus: 'Selesai' | 'Menunggu' | 'Batal') => {
     try {
       const { error } = await supabase
         .from('bookings')
@@ -261,13 +284,13 @@ export default function HalamanAdminUtama() {
             name: manualName.trim(),
             whatsapp: manualWhatsapp.trim(),
             booking_date: manualDate,
-            booking_time: manualTime,
+            booking_time: manualTime.replace('.', ':'),
             status: 'Menunggu'
           }
         ]);
 
       if (error) {
-        if (error.code === '23505') throw new Error("Slot waktu tersebut sudah dipesan. Pilih waktu lain.");
+        if (error.code === '23505') throw new Error("Maaf, slot waktu ini baru saja dipesan oleh orang lain. Silakan pilih slot lain.");
         throw error;
       }
 
@@ -304,170 +327,100 @@ export default function HalamanAdminUtama() {
         .from('bookings')
         .update({
           booking_date: rescheduleDate,
-          booking_time: rescheduleTime,
+          booking_time: rescheduleTime.replace('.', ':'),
           status: 'Menunggu'
         })
         .eq('id', activeReschedule.id);
 
       if (error) {
-        if (error.code === '23505') throw new Error("Slot waktu tersebut sudah dipesan. Pilih waktu lain.");
+        if (error.code === '23505') throw new Error("Maaf, slot waktu ini baru saja dipesan oleh orang lain. Silakan pilih slot lain.");
         throw error;
       }
 
-      fetchBookings();
+      if (rescheduleDate === filterDate) {
+        setBookings(prev => prev.map(b => 
+          b.id === activeReschedule.id 
+            ? { ...b, booking_date: rescheduleDate, booking_time: rescheduleTime.replace('.', ':') + ":00", status: 'Menunggu' } 
+            : b
+        ));
+      } else {
+        setBookings(prev => prev.filter(b => b.id !== activeReschedule.id));
+      }
+
       setActiveReschedule(null);
-      alert("Jadwal booking berhasil dipindahkan.");
+      alert("Jadwal booking berhasil diubah.");
     } catch (err: any) {
-      alert(err.message || "Gagal mengubah jadwal.");
+      alert(err.message || "Gagal melakukan reschedule.");
     } finally {
       setIsSavingReschedule(false);
     }
   };
 
+  const openRescheduleModal = (booking: Booking) => {
+    setActiveReschedule(booking);
+    setRescheduleDate(booking.booking_date);
+    setRescheduleTime(booking.booking_time.substring(0, 5).replace(':', '.'));
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'Menunggu': return <span className="badge badge-pending">Menunggu</span>;
-      case 'Selesai': return <span className="badge badge-completed">Selesai</span>;
-      case 'Batal': return <span className="badge badge-cancelled">Batal</span>;
-      default: return null;
+      case 'Menunggu':
+        return <span className="badge badge-pending">Menunggu</span>;
+      case 'Selesai':
+        return <span className="badge badge-completed">Selesai</span>;
+      case 'Batal':
+        return <span className="badge badge-cancelled">Batal</span>;
+      default:
+        return null;
     }
   };
 
   if (isLoadingSession) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', flexDirection: 'column', gap: '1rem' }}>
-        <RefreshCw className="animate-spin" size={32} style={{ color: 'var(--primary)', animation: 'spin 1.5s linear infinite' }} />
-        <span style={{ color: 'var(--text-muted)' }}>Memeriksa autentikasi...</span>
-        <style jsx global>{`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-        `}</style>
+      <div style={{ textAlign: 'center', padding: '5rem', color: 'var(--text-muted)' }}>
+        <RefreshCw size={36} style={{ animation: 'spin 1.5s linear infinite', marginBottom: '1rem', color: 'var(--primary)' }} />
+        <p style={{ fontSize: '1.1rem', fontWeight: 500 }}>Memeriksa sesi admin...</p>
+      </div>
+    );
+  }
+
+  if (!isEnvConfigured) {
+    return (
+      <div className="card" style={{ maxWidth: '600px', margin: '4rem auto', textAlign: 'center', padding: '3rem 2rem' }}>
+        <AlertCircle size={48} style={{ color: 'var(--danger)', margin: '0 auto 1.5rem auto' }} />
+        <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Konfigurasi Supabase Diperlukan</h2>
+        <p style={{ color: 'var(--text-muted)', lineHeight: '1.6', fontSize: '0.95rem' }}>
+          Harap isi variabel <code>NEXT_PUBLIC_SUPABASE_URL</code> and <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> di file <code>.env.local</code> terlebih dahulu untuk mengakses dashboard admin.
+        </p>
       </div>
     );
   }
 
   if (!isAuthenticated) {
     return (
-      <div style={{ maxWidth: '400px', margin: '4rem auto 0 auto' }}>
-        {!isEnvConfigured && (
-          <div className="alert alert-error" style={{ marginBottom: '1.5rem' }}>
-            <AlertTriangle size={20} />
-            <div>Konfigurasi Supabase (.env.local) belum terdeteksi.</div>
-          </div>
-        )}
-        <div className="card" style={{ padding: '2rem' }}>
-          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-            <div style={{ 
-              display: 'inline-flex', 
-              padding: '1rem', 
-              borderRadius: '50%', 
-              backgroundColor: 'rgba(197, 168, 128, 0.1)', 
-              color: 'var(--primary)',
-              marginBottom: '1rem'
-            }}>
-              <Lock size={28} />
-            </div>
-            <h1 style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>Login Admin</h1>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Akses dashboard booking barbershop</p>
-          </div>
-
-          {loginError && (
-            <div className="alert alert-error" style={{ padding: '0.75rem 1rem', marginBottom: '1.5rem' }}>
-              <X size={16} />
-              <div>{loginError}</div>
-            </div>
-          )}
-
-          <form onSubmit={handleLogin}>
-            <div className="form-group">
-              <label className="form-label">Sandi Admin</label>
-              <div className="input-icon-wrapper">
-                <Lock />
-                <input
-                  type="password"
-                  className="form-control"
-                  placeholder="Masukkan password admin..."
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  disabled={isLoggingIn}
-                />
-              </div>
-            </div>
-
-            <button type="submit" className="btn" style={{ marginTop: '1.5rem' }} disabled={isLoggingIn || !isEnvConfigured}>
-              {isLoggingIn ? 'Memverifikasi...' : 'Masuk ke Dashboard'}
-            </button>
-          </form>
-        </div>
-      </div>
+      <LoginForm 
+        password={password}
+        setPassword={setPassword}
+        isLoggingIn={isLoggingIn}
+        isEnvConfigured={isEnvConfigured}
+        handleLogin={handleLogin}
+      />
     );
   }
 
   return (
     <div style={{ animation: 'slideUp 0.3s ease' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
-        <div>
-          <h1 style={{ fontSize: '2rem', color: 'var(--primary)' }}>Dashboard Admin</h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Atur jadwal pemesanan, konfirmasi, dan walk-in pelanggan</p>
-        </div>
-        <button className="btn btn-secondary hide-on-mobile" style={{ width: 'auto', display: 'flex', gap: '0.5rem', alignItems: 'center' }} onClick={handleLogout}>
-          <LogOut size={16} /> Keluar
-        </button>
-      </div>
+      <DashboardHeader handleLogout={handleLogout} />
 
-      <div className="admin-toolbar">
-        <div className="toolbar-left">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Calendar size={18} style={{ color: 'var(--text-main)' }} />
-            <span style={{ fontWeight: 600, fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Filter Tanggal:</span>
-          </div>
-          <div onClick={handleDateClick} style={{ position: 'relative', width: '160px', cursor: 'pointer' }}>
-            <div className="form-control" style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'space-between',
-              padding: '0.5rem 1rem',
-              height: '38px',
-              backgroundColor: 'var(--bg-tertiary)',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-md)',
-              pointerEvents: 'none'
-            }}>
-              <span style={{ fontSize: '0.95rem', fontWeight: 500 }}>
-                {(() => {
-                  if (!filterDate) return "Pilih Tanggal";
-                  const [y, m, d] = filterDate.split('-');
-                  return `${d}/${m}/${y}`;
-                })()}
-              </span>
-              <Calendar size={14} style={{ color: 'var(--text-main)', opacity: 0.8 }} />
-            </div>
-            <input
-              type="date"
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                opacity: 0,
-                cursor: 'pointer',
-                zIndex: 2
-              }}
-              value={filterDate}
-              onChange={(e) => setFilterDate(e.target.value)}
-            />
-          </div>
-        </div>
-        <div className="toolbar-right">
-          <button className="btn" style={{ width: 'auto', padding: '0.5rem 1.25rem', fontSize: '0.9rem' }} onClick={() => setShowManualModal(true)}>
-            <Plus size={16} /> Booking Manual (Walk-in)
-          </button>
-        </div>
-      </div>
+      <Toolbar 
+        filterDate={filterDate}
+        setFilterDate={setFilterDate}
+        handleDateClick={handleDateClick}
+        openManualBookingModal={() => {
+          setShowManualModal(true);
+          setManualDate(filterDate || getTodayString());
+        }}
+      />
 
       {isLoadingData ? (
         <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
@@ -476,342 +429,58 @@ export default function HalamanAdminUtama() {
         </div>
       ) : bookings.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: '4rem 2rem', color: 'var(--text-muted)' }}>
-          <Calendar size={48} style={{ margin: '0 auto 1rem auto', opacity: 0.2 }} />
+          <CalendarRange size={48} style={{ margin: '0 auto 1rem auto', opacity: 0.2 }} />
           <p style={{ fontSize: '1.1rem', fontWeight: 500 }}>Tidak ada jadwal booking untuk tanggal ini.</p>
           <p style={{ fontSize: '0.85rem', marginTop: '0.25rem' }}>Gunakan tombol booking manual untuk menambahkan slot walk-in.</p>
         </div>
       ) : (
-        <div className="table-responsive">
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>Nama</th>
-                <th>WhatsApp</th>
-                <th>Jam Booking</th>
-                <th>Status</th>
-                <th>Konfirmasi Cepat</th>
-                <th>Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              {bookings.map((booking) => (
-                <tr key={booking.id}>
-                  <td data-label="Nama" style={{ fontWeight: 600 }}>{booking.name}</td>
-                  <td data-label="WhatsApp">
-                    <a 
-                      href={`https://wa.me/${booking.whatsapp.replace(/[^0-9]/g, '')}`} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', color: 'var(--primary)' }}
-                      title="Hubungi via WhatsApp"
-                    >
-                      <Phone size={14} />
-                      {booking.whatsapp}
-                    </a>
-                  </td>
-                  <td data-label="Jam Booking">
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontWeight: 600 }}>
-                      <Clock size={14} style={{ color: 'var(--primary)' }} />
-                      {booking.booking_time.substring(0, 5).replace(':', '.')}
-                    </span>
-                  </td>
-                  <td data-label="Status">{getStatusBadge(booking.status)}</td>
-                  <td data-label="Konfirmasi">
-                    <div style={{ display: 'flex', gap: '0.35rem', justifyContent: 'flex-end' }}>
-                      <button 
-                        className="btn-icon" 
-                        onClick={() => handleUpdateStatus(booking.id, 'Selesai')} 
-                        style={booking.status === 'Selesai' ? { backgroundColor: 'var(--success-bg)', color: 'var(--success)', borderColor: 'var(--success)' } : {}}
-                        title="Tandai Selesai"
-                      >
-                        <Check size={16} />
-                      </button>
-                      <button 
-                        className="btn-icon" 
-                        onClick={() => handleUpdateStatus(booking.id, 'Menunggu')} 
-                        style={booking.status === 'Menunggu' ? { backgroundColor: 'var(--warning-bg)', color: 'var(--warning)', borderColor: 'var(--warning)' } : {}}
-                        title="Tandai Menunggu"
-                      >
-                        <Clock size={16} />
-                      </button>
-                      <button 
-                        className="btn-icon btn-icon-danger" 
-                        onClick={() => handleUpdateStatus(booking.id, 'Batal')} 
-                        style={booking.status === 'Batal' ? { backgroundColor: 'var(--danger-bg)', color: 'var(--danger)', borderColor: 'var(--danger)' } : {}}
-                        title="Tandai Batal"
-                      >
-                        <X size={16} />
-                      </button>
-                    </div>
-                  </td>
-                  <td data-label="Aksi">
-                    <div className="action-buttons" style={{ justifyContent: 'flex-end' }}>
-                      <button 
-                        className="btn-icon" 
-                        onClick={() => {
-                          setActiveReschedule(booking);
-                          setRescheduleDate(booking.booking_date);
-                          setRescheduleTime(booking.booking_time.substring(0, 5).replace(':', '.'));
-                        }}
-                        title="Reschedule / Edit Jadwal"
-                      >
-                        <Edit2 size={16} />
-                      </button>
-                      <button 
-                        className="btn-icon btn-icon-danger" 
-                        onClick={() => handleDeleteBooking(booking.id)}
-                        title="Hapus Booking Permanen"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <BookingsTable 
+          bookings={bookings}
+          TIME_SLOTS={TIME_SLOTS}
+          getStatusBadge={getStatusBadge}
+          handleUpdateStatus={handleUpdateStatus}
+          handleDeleteBooking={handleDeleteBooking}
+          openRescheduleModal={openRescheduleModal}
+        />
       )}
 
-      {/* Modal Booking Manual */}
       {showManualModal && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: '550px' }}>
-            <div className="modal-header">
-              <h3 className="modal-title">Tambah Booking Manual (Walk-in)</h3>
-              <button className="modal-close" onClick={() => setShowManualModal(false)}>
-                <X size={20} />
-              </button>
-            </div>
-            
-            <form onSubmit={handleAddManualBooking}>
-              <div className="modal-body">
-                <div className="form-group">
-                  <label className="form-label">Nama Pelanggan</label>
-                  <div className="input-icon-wrapper">
-                    <User />
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder="Contoh: Walk-in Budi"
-                      value={manualName}
-                      onChange={(e) => setManualName(e.target.value)}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Nomor WhatsApp</label>
-                  <div className="input-icon-wrapper">
-                    <Phone />
-                    <input
-                      type="tel"
-                      className="form-control"
-                      placeholder="Contoh: 081234567890 (atau 'Walk-in')"
-                      value={manualWhatsapp}
-                      onChange={(e) => setManualWhatsapp(e.target.value)}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Tanggal Booking</label>
-                  <div className="input-icon-wrapper" onClick={handleDateClick} style={{ position: 'relative', cursor: 'pointer' }}>
-                    <Calendar style={{ color: 'var(--text-main)', opacity: 0.9, zIndex: 1 }} />
-                    <div className="form-control" style={{ 
-                      display: 'flex', 
-                      alignItems: 'center',
-                      height: '42px',
-                      pointerEvents: 'none'
-                    }}>
-                      <span style={{ fontWeight: 500 }}>
-                        {(() => {
-                          if (!manualDate) return "Pilih Tanggal Booking";
-                          const [y, m, d] = manualDate.split('-');
-                          return `${d}/${m}/${y}`;
-                        })()}
-                      </span>
-                    </div>
-                    <input
-                      type="date"
-                      style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        width: '100%',
-                        height: '100%',
-                        opacity: 0,
-                        cursor: 'pointer',
-                        zIndex: 2
-                      }}
-                      value={manualDate}
-                      onChange={(e) => setManualDate(e.target.value)}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="form-group" style={{ marginTop: '1.5rem' }}>
-                  <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span>Pilih Slot Jam</span>
-                    {isLoadingManualSlots && <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Memeriksa slot...</span>}
-                  </label>
-                  
-                  <div className="slots-container" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
-                    {TIME_SLOTS.map((slot) => {
-                      const isBooked = manualBookedTimes.includes(slot);
-                      const isSelected = manualTime === slot;
-                      const isPast = isSlotPast(manualDate, slot);
-                      
-                      return (
-                        <button
-                          key={slot}
-                          type="button"
-                          className={`slot-btn ${isSelected ? 'selected' : ''}`}
-                          disabled={isBooked || isLoadingManualSlots || isPast}
-                          onClick={() => setManualTime(slot)}
-                          title={isPast ? 'Waktu sudah lewat' : isBooked ? 'Sudah dipesan' : 'Tersedia'}
-                        >
-                          {slot}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-
-              <div className="modal-footer">
-                <button 
-                  type="button" 
-                  className="btn btn-secondary" 
-                  style={{ width: 'auto', padding: '0.75rem 1.5rem' }}
-                  onClick={() => setShowManualModal(false)}
-                  disabled={isSavingManual}
-                >
-                  Batal
-                </button>
-                <button 
-                  type="submit" 
-                  className="btn" 
-                  style={{ width: 'auto', padding: '0.75rem 1.5rem' }}
-                  disabled={isSavingManual || isLoadingManualSlots || !manualTime}
-                >
-                  {isSavingManual ? 'Menyimpan...' : 'Tambah Booking'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <ManualBookingModal 
+          manualName={manualName}
+          setManualName={setManualName}
+          manualWhatsapp={manualWhatsapp}
+          setManualWhatsapp={setManualWhatsapp}
+          manualDate={manualDate}
+          setManualDate={setManualDate}
+          manualTime={manualTime}
+          setManualTime={setManualTime}
+          manualBookedSlots={manualBookedSlots}
+          isLoadingManualSlots={isLoadingManualSlots}
+          isSavingManual={isSavingManual}
+          TIME_SLOTS={TIME_SLOTS}
+          handleDateClick={handleDateClick}
+          isSlotPast={isSlotPast}
+          handleAddManualBooking={handleAddManualBooking}
+          closeModal={() => setShowManualModal(false)}
+        />
       )}
 
-      {/* Modal Reschedule Admin */}
       {activeReschedule && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: '550px' }}>
-            <div className="modal-header">
-              <h3 className="modal-title">Reschedule Booking Admin</h3>
-              <button className="modal-close" onClick={() => setActiveReschedule(null)}>
-                <X size={20} />
-              </button>
-            </div>
-            
-            <div className="modal-body">
-              <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
-                Mengubah jadwal booking untuk: <strong>{activeReschedule.name}</strong>
-              </p>
-
-              <div className="form-group">
-                <label className="form-label">Pilih Tanggal Baru</label>
-                <div className="input-icon-wrapper" onClick={handleDateClick} style={{ position: 'relative', cursor: 'pointer' }}>
-                  <Calendar style={{ color: 'var(--text-main)', opacity: 0.9, zIndex: 1 }} />
-                  <div className="form-control" style={{ 
-                    display: 'flex', 
-                    alignItems: 'center',
-                    height: '42px',
-                    pointerEvents: 'none'
-                  }}>
-                    <span style={{ fontWeight: 500 }}>
-                      {(() => {
-                        if (!rescheduleDate) return "Pilih Tanggal Baru";
-                        const [y, m, d] = rescheduleDate.split('-');
-                        return `${d}/${m}/${y}`;
-                      })()}
-                    </span>
-                  </div>
-                  <input
-                    type="date"
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      width: '100%',
-                      height: '100%',
-                      opacity: 0,
-                      cursor: 'pointer',
-                      zIndex: 2
-                    }}
-                    value={rescheduleDate}
-                    onChange={(e) => setRescheduleDate(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="form-group" style={{ marginTop: '1.5rem' }}>
-                <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>Pilih Slot Jam Baru</span>
-                  {isLoadingRescheduleSlots && <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Memeriksa slot...</span>}
-                </label>
-                
-                <div className="slots-container" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
-                  {TIME_SLOTS.map((slot) => {
-                    const isBooked = rescheduleBookedTimes.includes(slot);
-                    const isCurrent = activeReschedule.booking_date === rescheduleDate && activeReschedule.booking_time.substring(0, 5) === slot;
-                    const isSelected = rescheduleTime === slot;
-                    const isPast = isSlotPast(rescheduleDate, slot);
-                    
-                    return (
-                      <button
-                        key={slot}
-                        type="button"
-                        className={`slot-btn ${isSelected ? 'selected' : ''}`}
-                        disabled={isBooked || isLoadingRescheduleSlots || isPast}
-                        onClick={() => setRescheduleTime(slot)}
-                        style={isCurrent ? { borderColor: 'rgba(197, 168, 128, 0.4)' } : {}}
-                        title={isCurrent ? 'Jadwal saat ini' : isPast ? 'Waktu sudah lewat' : isBooked ? 'Sudah dipesan' : 'Tersedia'}
-                      >
-                        {slot} {isCurrent && '*'}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            <div className="modal-footer">
-              <button 
-                type="button" 
-                className="btn btn-secondary" 
-                style={{ width: 'auto', padding: '0.75rem 1.5rem' }}
-                onClick={() => setActiveReschedule(null)}
-                disabled={isSavingReschedule}
-              >
-                Batal
-              </button>
-              <button 
-                type="button" 
-                className="btn" 
-                style={{ width: 'auto', padding: '0.75rem 1.5rem' }}
-                onClick={handleSaveReschedule}
-                disabled={isSavingReschedule || isLoadingRescheduleSlots || !rescheduleTime}
-              >
-                {isSavingReschedule ? 'Menyimpan...' : 'Simpan Perubahan'}
-              </button>
-            </div>
-          </div>
-        </div>
+        <RescheduleModal 
+          activeReschedule={activeReschedule}
+          rescheduleDate={rescheduleDate}
+          setRescheduleDate={setRescheduleDate}
+          rescheduleTime={rescheduleTime}
+          setRescheduleTime={setRescheduleTime}
+          rescheduleBookedSlots={rescheduleBookedSlots}
+          isLoadingRescheduleSlots={isLoadingRescheduleSlots}
+          isSavingReschedule={isSavingReschedule}
+          TIME_SLOTS={TIME_SLOTS}
+          handleDateClick={handleDateClick}
+          isSlotPast={isSlotPast}
+          handleSaveReschedule={handleSaveReschedule}
+          closeModal={() => setActiveReschedule(null)}
+        />
       )}
     </div>
   );

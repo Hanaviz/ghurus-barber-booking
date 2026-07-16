@@ -603,7 +603,7 @@ a {
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   color: var(--text-main);
-  padding: 0.75rem 0.5rem;
+  padding: 0.6rem 0.4rem;
   font-family: 'Outfit', sans-serif;
   font-weight: 600;
   font-size: 0.95rem;
@@ -611,6 +611,12 @@ a {
   transition: var(--transition);
   text-align: center;
   user-select: none;
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 56px;
+  overflow: hidden;
 }
 
 .slot-btn:hover:not(:disabled) {
@@ -627,12 +633,28 @@ a {
 }
 
 .slot-btn:disabled {
-  background-color: #111113;
-  border-color: rgba(255, 255, 255, 0.02);
-  color: #3f3f46;
   cursor: not-allowed;
+}
+
+.slot-btn.past {
+  background-color: #111113 !important;
+  border-color: rgba(255, 255, 255, 0.02) !important;
+  color: #3f3f46 !important;
+  opacity: 0.35 !important;
+}
+.slot-btn.past .slot-time {
   text-decoration: line-through;
-  opacity: 0.6;
+}
+
+.slot-btn.booked {
+  background-color: rgba(255, 255, 255, 0.02) !important;
+  border-color: rgba(255, 255, 255, 0.04) !important;
+  color: var(--text-muted) !important;
+  opacity: 0.95 !important;
+}
+.slot-btn.booked .slot-time {
+  text-decoration: line-through;
+  opacity: 0.45;
 }
 
 /* Buttons */
@@ -1071,10 +1093,11 @@ a {
   .admin-table tr {
     display: grid;
     grid-template-columns: 1.1fr 1fr;
-    grid-template-rows: auto auto auto;
+    grid-template-rows: auto auto auto auto;
     grid-template-areas: 
-      "jam nama"
-      "status wa"
+      "antrean jam"
+      "nama wa"
+      "status ."
       "konfirmasi aksi";
     gap: 0.5rem 0.75rem;
     margin-bottom: 0.75rem;
@@ -1102,9 +1125,14 @@ a {
   }
 
   /* Posisi Grid Area masing-masing data */
+  .admin-table td[data-label="Antrean"] {
+    grid-area: antrean;
+    justify-content: flex-start;
+  }
+
   .admin-table td[data-label="Jam Booking"] {
     grid-area: jam;
-    justify-content: flex-start;
+    justify-content: flex-end;
   }
 
   /* Sempurnakan Jam Booking agar berbentuk badge emas premium */
@@ -1119,7 +1147,7 @@ a {
 
   .admin-table td[data-label="Nama"] {
     grid-area: nama;
-    justify-content: flex-end;
+    justify-content: flex-start;
     font-weight: 700;
     font-size: 1rem;
     color: var(--text-main);
@@ -1190,12 +1218,12 @@ a {
 /* Screen sizes < 480px - Small Handphone Optimization */
 @media (max-width: 480px) {
   .slots-container {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 0.5rem;
   }
 
   .slot-btn {
-    padding: 0.6rem 0.25rem;
+    padding: 0.5rem 0.2rem;
     font-size: 0.85rem;
   }
 
