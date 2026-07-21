@@ -38,6 +38,7 @@ export default function HalamanAdminUtama() {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isLoadingSession, setIsLoadingSession] = useState(true);
   const [isEnvConfigured, setIsEnvConfigured] = useState(true);
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   // Dashboard Data States (Locked to Today)
   const [filterDate, setFilterDate] = useState('');
@@ -178,17 +179,24 @@ export default function HalamanAdminUtama() {
     e.preventDefault();
     if (!password) return;
     setIsLoggingIn(true);
+    setLoginError(null);
     try {
-      const success = await loginAdmin(password);
-      if (success) {
+      const res = await loginAdmin(password);
+      if (res && res.success) {
         setIsAuthenticated(true);
         setPassword('');
+        setLoginError(null);
         window.dispatchEvent(new Event('admin-login-status-change'));
+        showToast("Berhasil masuk ke Dashboard Admin.", "success");
       } else {
-        showToast("Kata sandi salah!", "error");
+        const errText = res?.error || "Kata sandi salah! Silakan periksa kembali.";
+        setLoginError(errText);
+        showToast(errText, "error");
       }
     } catch (err: any) {
-      showToast("Terjadi kesalahan: " + err.message, "error");
+      const errText = "Terjadi kesalahan: " + err.message;
+      setLoginError(errText);
+      showToast(errText, "error");
     } finally {
       setIsLoggingIn(false);
     }
@@ -212,6 +220,29 @@ export default function HalamanAdminUtama() {
     malamMaxVal: number
   ) => {
     if (!filterDate) return;
+
+    // Cek jika terdapat antrean aktif (Menunggu / Sedang Dicukur) pada hari ini
+    const activeBookings = bookings.filter(b => b.status === 'Menunggu' || b.status === 'Sedang Dicukur');
+    
+    let targetAffected: typeof activeBookings = [];
+    if (sesiAktifVal === 'tutup') {
+      targetAffected = activeBookings;
+    } else if (sesiAktifVal === 'siang') {
+      targetAffected = activeBookings.filter(b => b.session === 'malam');
+    } else if (sesiAktifVal === 'malam') {
+      targetAffected = activeBookings.filter(b => b.session === 'siang');
+    }
+
+    if (targetAffected.length > 0) {
+      const sessionLabel = sesiAktifVal === 'tutup' ? 'MENUTUP SEMUA SESI' : `menonaktifkan Sesi ${sesiAktifVal === 'siang' ? 'Malam' : 'Siang'}`;
+      const confirmAction = window.confirm(
+        `⚠️ PERINGATAN OPERASIONAL:\n\nSaat ini masih terdapat ${targetAffected.length} antrean aktif yang sudah terdaftar.\n\nTindakan ${sessionLabel} HANYA akan menghentikan pendaftaran antrean BARU dari pelanggan publik. Data antrean yang sudah terdaftar tetap 100% aman dan dapat Anda proses sampai selesai.\n\nApakah Anda yakin ingin melanjutkan penyimpanan?`
+      );
+      if (!confirmAction) {
+        return;
+      }
+    }
+
     setIsSavingStatus(true);
     try {
       const statusVal = sesiAktifVal === 'tutup' ? 'tutup' : 'buka';
@@ -233,7 +264,12 @@ export default function HalamanAdminUtama() {
       setSiangMax(siangMaxVal);
       setMalamBuka(malamBukaVal);
       setMalamMax(malamMaxVal);
-      showToast("Pengaturan operasional sesi antrean berhasil diperbarui.", "success");
+
+      if (sesiAktifVal === 'tutup' && activeBookings.length > 0) {
+        showToast(`Sesi ditutup untuk pendaftaran baru. ${activeBookings.length} antrean aktif tetap dapat diproses.`, "success");
+      } else {
+        showToast("Pengaturan operasional sesi antrean berhasil diperbarui.", "success");
+      }
     } catch (err: any) {
       showToast("Gagal memperbarui pengaturan: " + err.message, "error");
     } finally {
@@ -486,6 +522,7 @@ export default function HalamanAdminUtama() {
         isLoggingIn={isLoggingIn}
         isEnvConfigured={isEnvConfigured}
         handleLogin={handleLogin}
+        error={loginError}
       />
     );
   }

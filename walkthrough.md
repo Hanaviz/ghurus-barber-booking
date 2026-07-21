@@ -1,16 +1,16 @@
-# Walkthrough: Redesain Tombol Booking Manual (Walk-in) Minimalis & Compact
+# Walkthrough: Penambahan Alert Banner Peringatan Kata Sandi Salah pada Form Login Admin
 
-Kami telah memperbarui tombol **`+ Booking Manual (Walk-in)`** agar tampil jauh lebih **minimalis, compact, dan proporsional** pada layar laptop/desktop.
+Kami telah memperbarui komponen `LoginForm.tsx` dan `HalamanAdminUtama.tsx` agar ketika kata sandi yang dimasukkan salah, peringatan **`⚠️ Password admin salah! Silakan periksa kembali.`** langsung tampil secara jelas dan tegas di atas kolom kata sandi.
 
 ---
 
 ## 1. Rincian Pembaruan
 
-* **Sebelumnya**: Menggunakan `width: 100%` yang membuat tombol melebar sangat panjang dan tampak kaku melintasi seluruh lebar layar laptop.
-* **Sesudah**:
-  * Menggunakan `width: auto` dengan padding proporsional (`0 1.25rem`).
-  * Tinggi tombol dicuitkan menjadi `34px` dengan sudut membulat yang elegan (*dashed border gold*).
-  * Terletak rapi dan presisi di sisi kiri di bawah kartu pengaturan operasional.
+1. **Alert Banner Merah di Form Login (`LoginForm.tsx`)**:
+   * Ketika tombol **MASUK KE DASHBOARD** diklik dengan kata sandi yang salah, kotak alert merah (*danger alert*) langsung muncul tepat di atas kolom kata sandi:
+     > ⚠️ **Password admin salah! Silakan periksa kembali.**
+2. **Fitur Ikon Mata (`Eye`/`EyeOff`)**:
+   * Pengguna dapat mengklik ikon mata di sisi kanan kolom kata sandi untuk memeriksa huruf/karakter yang sedang diketik secara transparan.
 
 ---
 

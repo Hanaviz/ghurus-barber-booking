@@ -196,7 +196,29 @@ export default function FormulirBooking() {
     setIsSubmitting(true);
 
     try {
-      // Dapatkan nomor antrean terkini secara aman berdasarkan sesi terpilih
+      // 1. Cek apakah nomor WhatsApp ini sudah memiliki antrean AKTIF ('Menunggu' / 'Sedang Dicukur') hari ini
+      const { data: activeBooking, error: checkError } = await supabase
+        .from('bookings')
+        .select('queue_number, session, status')
+        .eq('booking_date', date)
+        .eq('whatsapp', whatsapp.trim())
+        .in('status', ['Menunggu', 'Sedang Dicukur'])
+        .maybeSingle();
+
+      if (checkError) throw checkError;
+
+      if (activeBooking) {
+        const prefix = activeBooking.session === 'malam' ? 'M-' : 'S-';
+        const statusLabel = activeBooking.status === 'Sedang Dicukur' ? 'Sedang Dicukur' : 'Menunggu';
+        setMessage({ 
+          type: 'error', 
+          text: `Nomor WhatsApp ini sudah memiliki antrean aktif (Tiket ${prefix}${activeBooking.queue_number} - ${statusLabel}) untuk hari ini. Harap selesaikan atau batalkan antrean sebelumnya terlebih dahulu.` 
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      // 2. Dapatkan nomor antrean terkini secara aman berdasarkan sesi terpilih
       const { data: bookingsToday, error: queryError } = await supabase
         .from('bookings')
         .select('queue_number')
