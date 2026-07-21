@@ -1,9 +1,10 @@
 "use client";
 
 import Link from 'next/link';
+import { Ticket } from 'lucide-react';
 
 interface BookingSuccessProps {
-  successData: { date: string; time: string };
+  successData: { date: string; queue_number: number; session: 'siang' | 'malam' };
   handleResetForm: () => void;
   formatDateIndo: (dateStr: string) => string;
 }
@@ -13,6 +14,11 @@ export default function BookingSuccess({
   handleResetForm,
   formatDateIndo
 }: BookingSuccessProps) {
+  const isMalam = successData.session === 'malam';
+  const prefix = isMalam ? 'M-' : 'S-';
+  const sessionColor = isMalam ? '#a78bfa' : '#f59e0b';
+  const sessionBorder = isMalam ? '2px dashed #8b5cf6' : '2px dashed #f59e0b';
+
   return (
     <div className="card success-card" style={{ textAlign: 'center', padding: '3.5rem 2rem', animation: 'zoomIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
       <div className="success-checkmark-container" style={{ marginBottom: '1.5rem' }}>
@@ -22,55 +28,69 @@ export default function BookingSuccess({
         </svg>
       </div>
       
-      <h2 style={{ fontSize: '1.8rem', color: 'var(--primary)', marginBottom: '1rem', fontFamily: "'Playfair Display', serif", fontWeight: 700 }}>
-        Booking Berhasil!
+      <h2 style={{ fontSize: '1.8rem', color: 'var(--primary)', marginBottom: '0.75rem', fontFamily: "'Playfair Display', serif", fontWeight: 700 }}>
+        Antrean Diterima!
       </h2>
       
-      <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', maxWidth: '420px', margin: '0 auto 2rem auto', lineHeight: '1.6' }}>
-        Jadwal pangkas rambut Anda di <strong>Ghurus Barber Clinic</strong> telah berhasil disimpan. Silakan datang tepat waktu sesuai jadwal Anda.
+      <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', maxWidth: '420px', margin: '0 auto 1.75rem auto', lineHeight: '1.6' }}>
+        Tiket antrean Anda di <strong>Ghurus Barber Clinic</strong> berhasil dicadangkan. Silakan pantau nomor antrean berjalan secara langsung melalui tautan status di bawah.
       </p>
 
+      {/* Ticket Queue Card */}
       <div style={{ 
         backgroundColor: 'var(--bg-tertiary)', 
-        border: '1px solid var(--border)', 
+        border: sessionBorder, 
         borderRadius: 'var(--radius-md)', 
-        padding: '1.25rem 1.5rem', 
-        maxWidth: '380px', 
+        padding: '1.5rem', 
+        maxWidth: '320px', 
         margin: '0 auto 2.5rem auto', 
-        textAlign: 'left',
-        boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.2)'
+        textAlign: 'center',
+        boxShadow: '0 8px 20px rgba(0,0,0,0.3)',
+        position: 'relative',
+        overflow: 'hidden'
       }}>
-        <div style={{ marginBottom: '0.75rem', fontSize: '0.9rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ color: 'var(--text-muted)' }}>Tanggal Booking:</span> 
-          <strong style={{ color: 'var(--text-main)' }}>{formatDateIndo(successData.date)}</strong>
+        {/* Ticket notch left */}
+        <div style={{ position: 'absolute', left: '-10px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px', borderRadius: '50%', backgroundColor: 'var(--bg-primary)', borderRight: '1px solid var(--border)' }} />
+        {/* Ticket notch right */}
+        <div style={{ position: 'absolute', right: '-10px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px', borderRadius: '50%', backgroundColor: 'var(--bg-primary)', borderLeft: '1px solid var(--border)' }} />
+
+        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem', marginBottom: '0.5rem' }}>
+          <Ticket size={14} style={{ color: sessionColor }} />
+          <span style={{ color: sessionColor, fontWeight: 700 }}>Tiket {isMalam ? 'Sesi Malam' : 'Sesi Siang'}</span>
         </div>
-        <div style={{ fontSize: '0.9rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ color: 'var(--text-muted)' }}>Jam Booking:</span> 
-          <strong style={{ color: 'var(--primary)', fontSize: '1rem' }}>{successData.time.replace(':', '.')} WIB</strong>
+
+        <div style={{ fontSize: '3rem', fontWeight: 800, color: sessionColor, margin: '0.25rem 0', lineHeight: '1' }}>
+          {prefix}{successData.queue_number}
+        </div>
+
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', marginTop: '0.75rem', paddingTop: '0.75rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+          Tanggal: <strong style={{ color: 'var(--text-main)' }}>{formatDateIndo(successData.date)}</strong>
         </div>
       </div>
       
-      <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
         <button 
           onClick={handleResetForm}
-          className="btn" 
-          style={{ width: 'auto', padding: '0.75rem 2rem', fontWeight: 600 }}
+          className="btn btn-secondary" 
+          style={{ width: 'auto', padding: '0.75rem 1.75rem', fontWeight: 600 }}
         >
-          Booking Baru
+          Pendaftaran Baru
         </button>
         <Link 
           href="/booking-status"
-          className="btn btn-secondary" 
+          className="btn" 
           style={{ 
             width: 'auto', 
-            padding: '0.75rem 2rem', 
+            padding: '0.75rem 1.75rem', 
             display: 'inline-flex', 
             alignItems: 'center', 
             justifyContent: 'center', 
-            fontWeight: 600 
+            fontWeight: 700,
+            backgroundColor: sessionColor,
+            color: isMalam ? '#fff' : '#000'
           }}
         >
-          Cek Status Booking
+          Pantau Antrean Live
         </Link>
       </div>
     </div>

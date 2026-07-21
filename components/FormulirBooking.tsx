@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { AlertCircle } from 'lucide-react';
 
-import { TIME_SLOTS, isSlotPast } from '@/lib/config';
 import BookingSuccess from './booking/BookingSuccess';
 import BookingForm from './booking/BookingForm';
 
@@ -27,29 +26,33 @@ export default function FormulirBooking() {
     return `${parseInt(d, 10)} ${months[parseInt(m, 10) - 1]} ${y}`;
   };
 
-  const handleDateClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    const input = e.currentTarget.querySelector('input[type="date"]') as HTMLInputElement;
-    if (input) {
-      try {
-        input.showPicker();
-      } catch (err) {
-        input.focus();
-        input.click();
-      }
-    }
-  };
-
   const [name, setName] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
   const [date, setDate] = useState('');
-  const [selectedTime, setSelectedTime] = useState('');
   
-  interface BookedSlot {
-    time: string;
-    name: string;
-  }
+  // Real-time Queue settings (Dual Session)
+  const [sesiAktif, setSesiAktif] = useState<'semua' | 'siang' | 'malam' | 'tutup'>('tutup');
+  const [session, setSession] = useState<'siang' | 'malam'>('siang');
+  
+  const [siangBuka, setSiangBuka] = useState('14:00');
+  const [siangMax, setSiangMax] = useState(5);
+  const [siangCurrent, setSiangCurrent] = useState(0);
+  
+  const [malamBuka, setMalamBuka] = useState('20:00');
+  const [malamMax, setMalamMax] = useState(10);
+  const [malamCurrent, setMalamCurrent] = useState(0);
 
-  const [bookedSlots, setBookedSlots] = useState<BookedSlot[]>([]);
+  const [siangCount, setSiangCount] = useState(0);
+  const [malamCount, setMalamCount] = useState(0);
+
+  interface QueueItem {
+    name: string;
+    queue_number: number;
+    status: 'Menunggu' | 'Sedang Dicukur' | 'Selesai' | 'Batal';
+    session: 'siang' | 'malam';
+  }
+  const [todayBookings, setTodayBookings] = useState<QueueItem[]>([]);
+  
   const [isLoadingSlots, setIsLoadingSlots] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -57,7 +60,7 @@ export default function FormulirBooking() {
 
   // Success view states
   const [isSuccess, setIsSuccess] = useState(false);
-  const [successData, setSuccessData] = useState({ date: '', time: '' });
+  const [successData, setSuccessData] = useState({ date: '', queue_number: 0, session: 'siang' as 'siang' | 'malam' });
 
   useEffect(() => {
     setDate(getTodayString());
@@ -68,63 +71,155 @@ export default function FormulirBooking() {
     }
   }, []);
 
-  useEffect(() => {
+  const fetchDayQueueStatus = async () => {
     if (!isEnvConfigured || !date) return;
+    setIsLoadingSlots(true);
+    try {
+      // 1. Ambil status operasional harian & antrean saat ini
+      const { data: scheduleData, error: scheduleError } = await supabase
+        .from('barber_schedule')
+        .select(`
+          status, sesi_aktif, 
+          siang_buka, siang_max, siang_current,
+          malam_buka, malam_max, malam_current
+        `)
+        .eq('date', date)
+        .maybeSingle();
 
-    const fetchBookedSlots = async () => {
-      setIsLoadingSlots(true);
-      try {
-        const { data, error } = await supabase
-          .from('bookings')
-          .select('booking_time, name')
-          .eq('booking_date', date)
-          .neq('status', 'Batal');
+      if (scheduleError) throw scheduleError;
 
-        if (error) throw error;
-
-        if (data) {
-          const slots: BookedSlot[] = data.map((item: any) => {
-            const timeStr = item.booking_time;
-            return {
-              time: timeStr ? timeStr.substring(0, 5).replace(':', '.') : '',
-              name: item.name
-            };
-          }).filter(slot => slot.time !== '');
-          setBookedSlots(slots);
-        }
-      } catch (err: any) {
-        console.error("Gagal memuat slot terpesan:", err);
-      } finally {
-        setIsLoadingSlots(false);
+      if (scheduleData) {
+        setSesiAktif((scheduleData.sesi_aktif as any) || 'tutup');
+        setSiangBuka(scheduleData.siang_buka || '14:00');
+        setSiangMax(scheduleData.siang_max || 5);
+        setSiangCurrent(scheduleData.siang_current || 0);
+        setMalamBuka(scheduleData.malam_buka || '20:00');
+        setMalamMax(scheduleData.malam_max || 10);
+        setMalamCurrent(scheduleData.malam_current || 0);
+      } else {
+        setSesiAktif('tutup');
+        setSiangBuka('14:00');
+        setSiangMax(5);
+        setSiangCurrent(0);
+        setMalamBuka('20:00');
+        setMalamMax(10);
+        setMalamCurrent(0);
       }
-    };
 
-    fetchBookedSlots();
-    setSelectedTime('');
+      // 2. Ambil antrean terdaftar hari ini
+      const { data: bookingsData, error: bookingsError } = await supabase
+        .from('bookings')
+        .select('name, queue_number, status, session')
+        .eq('booking_date', date)
+        .neq('status', 'Batal')
+        .order('session', { ascending: false })
+        .order('queue_number', { ascending: true });
+
+      if (bookingsError) throw bookingsError;
+
+      const siang = bookingsData ? bookingsData.filter((b: any) => b.session === 'siang').length : 0;
+      const malam = bookingsData ? bookingsData.filter((b: any) => b.session === 'malam').length : 0;
+
+      setSiangCount(siang);
+      setMalamCount(malam);
+      setTodayBookings((bookingsData as any) || []);
+
+    } catch (err: any) {
+      console.error("Gagal memuat status antrean harian:", err);
+    } finally {
+      setIsLoadingSlots(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDayQueueStatus();
   }, [date, isEnvConfigured]);
+
+  useEffect(() => {
+    const currentHour = new Date().getHours();
+    if (sesiAktif === 'malam' || (sesiAktif === 'semua' && currentHour >= 18)) {
+      setSession('malam');
+    } else {
+      setSession('siang');
+    }
+  }, [sesiAktif]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setMessage(null);
 
-    if (!name.trim() || !whatsapp.trim() || !date || !selectedTime) {
-      setMessage({ type: 'error', text: 'Harap lengkapi semua data form booking.' });
+    if (!name.trim() || !whatsapp.trim() || !date) {
+      setMessage({ type: 'error', text: 'Harap lengkapi Nama dan nomor WhatsApp Anda.' });
       return;
     }
 
-    if (isSlotPast(date, selectedTime)) {
-      setMessage({ type: 'error', text: 'Waktu booking tersebut sudah terlewati. Silakan pilih jam lain.' });
+    if (sesiAktif === 'tutup') {
+      setMessage({ type: 'error', text: 'Maaf, pendaftaran antrean untuk hari ini sedang ditutup.' });
       return;
+    }
+
+    const currentHour = new Date().getHours();
+
+    if (session === 'siang') {
+      if (sesiAktif !== 'semua' && sesiAktif !== 'siang') {
+        setMessage({ type: 'error', text: 'Maaf, Sesi Siang tidak dibuka hari ini.' });
+        return;
+      }
+      if (currentHour >= 18) {
+        setMessage({ type: 'error', text: 'Maaf, pendaftaran Sesi Siang untuk hari ini sudah berakhir (Tutup pukul 18:00 WIB). Silakan mendaftar Sesi Malam.' });
+        return;
+      }
+      if (siangCount >= siangMax) {
+        setMessage({ type: 'error', text: 'Maaf, kuota antrean Sesi Siang hari ini sudah penuh.' });
+        return;
+      }
+    } else {
+      if (sesiAktif !== 'semua' && sesiAktif !== 'malam') {
+        setMessage({ type: 'error', text: 'Maaf, Sesi Malam tidak dibuka hari ini.' });
+        return;
+      }
+      if (currentHour >= 23 || currentHour < 6) {
+        setMessage({ type: 'error', text: 'Maaf, pendaftaran Sesi Malam untuk malam ini sudah ditutup.' });
+        return;
+      }
+      if (malamCount >= malamMax) {
+        setMessage({ type: 'error', text: 'Maaf, kuota antrean Sesi Malam hari ini sudah penuh.' });
+        return;
+      }
     }
 
     if (!isEnvConfigured) {
-      setMessage({ type: 'error', text: 'Supabase belum dikonfigurasi. Atur berkas .env.local Anda.' });
+      setMessage({ type: 'error', text: 'Supabase belum dikonfigurasi. Hubungi pemilik toko.' });
       return;
     }
 
     setIsSubmitting(true);
 
     try {
+      // Dapatkan nomor antrean terkini secara aman berdasarkan sesi terpilih
+      const { data: bookingsToday, error: queryError } = await supabase
+        .from('bookings')
+        .select('queue_number')
+        .eq('booking_date', date)
+        .eq('session', session)
+        .neq('status', 'Batal');
+      
+      if (queryError) throw queryError;
+      
+      let nextQueueNo = 1;
+      if (bookingsToday && bookingsToday.length > 0) {
+        const nums = bookingsToday.map((b: any) => b.queue_number || 0);
+        nextQueueNo = Math.max(...nums) + 1;
+      }
+
+      const selectedMax = session === 'siang' ? siangMax : malamMax;
+      if (nextQueueNo > selectedMax) {
+        throw new Error(`Maaf, kuota antrean Sesi ${session === 'siang' ? 'Siang' : 'Malam'} hari ini baru saja penuh.`);
+      }
+
+      const now = new Date();
+      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:00`;
+
       const { error } = await supabase
         .from('bookings')
         .insert([
@@ -132,32 +227,31 @@ export default function FormulirBooking() {
             name: name.trim(),
             whatsapp: whatsapp.trim(),
             booking_date: date,
-            booking_time: selectedTime.replace('.', ':'),
+            booking_time: timeStr,
+            queue_number: nextQueueNo,
+            session: session,
             status: 'Menunggu'
           }
         ]);
 
-      if (error) {
-        if (error.code === '23505') {
-          throw new Error("Maaf, slot waktu ini baru saja dipesan oleh orang lain. Silakan pilih slot lain.");
-        }
-        throw error;
-      }
+      if (error) throw error;
 
-      // Trigger success popup state
-      setSuccessData({ date, time: selectedTime });
+      // Set data sukses
+      setSuccessData({ date, queue_number: nextQueueNo, session });
       setIsSuccess(true);
 
-      // Clean inputs
+      // Reset input data diri
       setName('');
       setWhatsapp('');
-      setSelectedTime('');
-      setBookedSlots(prev => [
-        ...prev, 
-        { time: selectedTime, name: name.trim() }
-      ]);
+      
+      if (session === 'siang') {
+        setSiangCount(prev => prev + 1);
+      } else {
+        setMalamCount(prev => prev + 1);
+      }
+
     } catch (err: any) {
-      setMessage({ type: 'error', text: err.message || 'Terjadi kesalahan saat memproses booking.' });
+      setMessage({ type: 'error', text: err.message || 'Terjadi kesalahan saat mengambil nomor antrean.' });
     } finally {
       setIsSubmitting(false);
     }
@@ -165,9 +259,10 @@ export default function FormulirBooking() {
 
   const handleResetForm = () => {
     setIsSuccess(false);
-    setSuccessData({ date: '', time: '' });
+    setSuccessData({ date: '', queue_number: 0, session: 'siang' });
     setMessage(null);
     setDate(getTodayString());
+    fetchDayQueueStatus();
   };
 
   return (
@@ -197,18 +292,23 @@ export default function FormulirBooking() {
           whatsapp={whatsapp}
           setWhatsapp={setWhatsapp}
           date={date}
-          setDate={setDate}
-          selectedTime={selectedTime}
-          setSelectedTime={setSelectedTime}
-          bookedSlots={bookedSlots}
+          sesiAktif={sesiAktif}
+          session={session}
+          setSession={setSession}
+          siangBuka={siangBuka}
+          siangMax={siangMax}
+          siangCurrent={siangCurrent}
+          siangCount={siangCount}
+          malamBuka={malamBuka}
+          malamMax={malamMax}
+          malamCurrent={malamCurrent}
+          malamCount={malamCount}
+          todayBookings={todayBookings}
           isLoadingSlots={isLoadingSlots}
           isSubmitting={isSubmitting}
           isEnvConfigured={isEnvConfigured}
           message={message}
           handleSubmit={handleSubmit}
-          handleDateClick={handleDateClick}
-          isSlotPast={isSlotPast}
-          TIME_SLOTS={TIME_SLOTS}
         />
       )}
     </div>

@@ -1,30 +1,23 @@
 "use client";
 
 import React from 'react';
-import { Calendar, X } from 'lucide-react';
-
-interface BookedSlot {
-  time: string;
-  name: string;
-}
+import { X, User, Phone, Ticket } from 'lucide-react';
 
 interface ManualBookingModalProps {
   manualName: string;
   setManualName: (val: string) => void;
   manualWhatsapp: string;
   setManualWhatsapp: (val: string) => void;
-  manualDate: string;
-  setManualDate: (val: string) => void;
-  manualTime: string;
-  setManualTime: (val: string) => void;
-  manualBookedSlots: BookedSlot[];
-  isLoadingManualSlots: boolean;
+  manualSession: 'siang' | 'malam';
+  setManualSession: (val: 'siang' | 'malam') => void;
   isSavingManual: boolean;
-  TIME_SLOTS: string[];
-  handleDateClick: (e: React.MouseEvent<HTMLDivElement>) => void;
-  isSlotPast: (dateStr: string, timeStr: string) => boolean;
   handleAddManualBooking: (e: React.FormEvent) => void;
   closeModal: () => void;
+  sesiAktif: 'semua' | 'siang' | 'malam' | 'tutup';
+  siangCount: number;
+  malamCount: number;
+  siangMax: number;
+  malamMax: number;
 }
 
 export default function ManualBookingModal({
@@ -32,143 +25,177 @@ export default function ManualBookingModal({
   setManualName,
   manualWhatsapp,
   setManualWhatsapp,
-  manualDate,
-  setManualDate,
-  manualTime,
-  setManualTime,
-  manualBookedSlots,
-  isLoadingManualSlots,
+  manualSession,
+  setManualSession,
   isSavingManual,
-  TIME_SLOTS,
-  handleDateClick,
-  isSlotPast,
   handleAddManualBooking,
-  closeModal
+  closeModal,
+  sesiAktif,
+  siangCount,
+  malamCount,
+  siangMax,
+  malamMax
 }: ManualBookingModalProps) {
+  const selectedMax = manualSession === 'siang' ? siangMax : malamMax;
+  const selectedCount = manualSession === 'siang' ? siangCount : malamCount;
+  const isFull = selectedCount >= selectedMax;
+
+  const isClosed = sesiAktif === 'tutup';
+
   return (
     <div className="modal-overlay">
-      <div className="modal-content" style={{ maxWidth: '550px' }}>
+      <div className="modal-content" style={{ maxWidth: '480px' }}>
         <div className="modal-header">
           <h3 className="modal-title">Booking Manual (Walk-in)</h3>
-          <button className="modal-close" onClick={closeModal}>
+          <button className="modal-close" onClick={closeModal} type="button">
             <X size={20} />
           </button>
         </div>
         
         <form onSubmit={handleAddManualBooking}>
           <div className="modal-body">
-            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
-              Gunakan form ini jika pelanggan mendaftar langsung di tempat pangkas rambut.
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
+              Masukkan data pelanggan walk-in yang datang langsung ke toko untuk didaftarkan ke antrean sesi aktif hari ini.
             </p>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }} className="grid-responsive-2">
-              <div className="form-group">
-                <label className="form-label">Nama Pelanggan</label>
+            {/* Live Queue Info Card */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: '0.75rem',
+              backgroundColor: 'rgba(255, 255, 255, 0.02)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-md)',
+              padding: '0.75rem',
+              marginBottom: '1.25rem'
+            }}>
+              <div>
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase' }}>Sesi Booking</span>
+                <strong style={{ fontSize: '0.9rem', color: 'var(--primary)', textTransform: 'capitalize' }}>
+                  Sesi {manualSession === 'siang' ? '☀️ Siang' : '🌙 Malam'}
+                </strong>
+              </div>
+              <div>
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase' }}>Kuota Terisi</span>
+                <strong style={{ fontSize: '0.9rem', color: isFull ? 'var(--danger)' : 'var(--text-main)' }}>
+                  {selectedCount} / {selectedMax} Antrean
+                </strong>
+              </div>
+            </div>
+
+            {isClosed ? (
+              <div className="alert alert-error" style={{ fontSize: '0.85rem', marginBottom: '1rem' }}>
+                Pendaftaran antrean sedang ditutup oleh owner. Silakan aktifkan status sesi aktif terlebih dahulu di toolbar.
+              </div>
+            ) : isFull ? (
+              <div className="alert alert-error" style={{ fontSize: '0.85rem', marginBottom: '1rem' }}>
+                Kuota antrean Sesi {manualSession === 'siang' ? 'Siang' : 'Malam'} hari ini sudah penuh ({selectedMax} orang).
+              </div>
+            ) : null}
+
+            {/* Session selector (only when both sessions are active) */}
+            {sesiAktif === 'semua' && (
+              <div className="form-group" style={{ marginBottom: '1.25rem' }}>
+                <label className="form-label" style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>Pilih Sesi Booking</label>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button
+                    type="button"
+                    className="btn"
+                    style={{ 
+                      flex: 1, 
+                      height: '36px', 
+                      fontSize: '0.8rem', 
+                      padding: 0,
+                      backgroundColor: manualSession === 'siang' ? '#f59e0b' : 'rgba(255,255,255,0.02)',
+                      color: manualSession === 'siang' ? '#000' : 'var(--text-muted)',
+                      border: manualSession === 'siang' ? 'none' : '1px solid var(--border)',
+                      fontWeight: 700
+                    }}
+                    onClick={() => setManualSession('siang')}
+                    disabled={isSavingManual}
+                  >
+                    ☀️ Sesi Siang
+                  </button>
+                  <button
+                    type="button"
+                    className="btn"
+                    style={{ 
+                      flex: 1, 
+                      height: '36px', 
+                      fontSize: '0.8rem', 
+                      padding: 0,
+                      backgroundColor: manualSession === 'malam' ? '#8b5cf6' : 'rgba(255,255,255,0.02)',
+                      color: manualSession === 'malam' ? '#fff' : 'var(--text-muted)',
+                      border: manualSession === 'malam' ? 'none' : '1px solid var(--border)',
+                      fontWeight: 700
+                    }}
+                    onClick={() => setManualSession('malam')}
+                    disabled={isSavingManual}
+                  >
+                    🌙 Sesi Malam
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="form-group">
+              <label className="form-label" htmlFor="manualName">Nama Pelanggan</label>
+              <div className="input-icon-wrapper">
+                <User size={18} />
                 <input
+                  id="manualName"
                   type="text"
                   className="form-control"
-                  placeholder="Contoh: Budi..."
+                  placeholder="Masukkan nama lengkap"
                   value={manualName}
                   onChange={(e) => setManualName(e.target.value)}
+                  disabled={isSavingManual || isClosed || isFull}
                   required
-                  disabled={isSavingManual}
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label">WhatsApp Pelanggan</label>
-                <input
-                  type="tel"
-                  className="form-control"
-                  placeholder="Contoh: 0812..."
-                  value={manualWhatsapp}
-                  onChange={(e) => setManualWhatsapp(e.target.value)}
-                  required
-                  disabled={isSavingManual}
                 />
               </div>
             </div>
 
             <div className="form-group">
-              <label className="form-label">Tanggal Booking</label>
-              <div className="input-icon-wrapper" onClick={handleDateClick} style={{ position: 'relative', cursor: 'pointer' }}>
-                <Calendar style={{ color: 'var(--text-main)', opacity: 0.9, zIndex: 1 }} />
-                <div className="form-control" style={{ 
-                  display: 'flex', 
-                  alignItems: 'center',
-                  height: '42px',
-                  pointerEvents: 'none'
-                }}>
-                  <span style={{ fontWeight: 500 }}>
-                    {(() => {
-                      if (!manualDate) return "Pilih Tanggal Booking";
-                      const [y, m, d] = manualDate.split('-');
-                      return `${d}/${m}/${y}`;
-                    })()}
-                  </span>
-                </div>
+              <label className="form-label" htmlFor="manualWhatsapp">Nomor WhatsApp</label>
+              <div className="input-icon-wrapper">
+                <Phone size={18} />
                 <input
-                  type="date"
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    height: '100%',
-                    opacity: 0,
-                    cursor: 'pointer',
-                    zIndex: 2
-                  }}
-                  value={manualDate}
-                  onChange={(e) => setManualDate(e.target.value)}
+                  id="manualWhatsapp"
+                  type="tel"
+                  className="form-control"
+                  placeholder="Contoh: 08123456789"
+                  value={manualWhatsapp}
+                  onChange={(e) => setManualWhatsapp(e.target.value)}
+                  disabled={isSavingManual || isClosed || isFull}
                   required
                 />
               </div>
             </div>
 
-            <div className="form-group" style={{ marginTop: '1.5rem' }}>
-              <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span>Pilih Slot Jam</span>
-                {isLoadingManualSlots && <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Memeriksa slot...</span>}
-              </label>
-              
-              <div className="slots-container">
-                {TIME_SLOTS.map((slot, idx) => {
-                  const bookedInfo = manualBookedSlots.find(s => s.time === slot);
-                  const isSelected = manualTime === slot;
-                  const isPast = isSlotPast(manualDate, slot);
-                  const queueNo = idx + 1;
-                  
-                  return (
-                    <button
-                      key={slot}
-                      type="button"
-                      className={`slot-btn ${isSelected ? 'selected' : ''} ${bookedInfo ? 'booked' : ''} ${isPast ? 'past' : ''}`}
-                      disabled={!!bookedInfo || isLoadingManualSlots || isPast}
-                      onClick={() => setManualTime(slot)}
-                      title={isPast ? 'Waktu sudah lewat' : bookedInfo ? `Dipesan oleh ${bookedInfo.name} (Antrean No. ${queueNo})` : `Pilih Antrean No. ${queueNo}`}
-                    >
-                      <span className="slot-time">{slot}</span>
-                      {isPast ? (
-                        <span className="slot-status" style={{ fontSize: '0.65rem', opacity: 0.4, marginTop: '0.15rem', fontWeight: 500 }}>No. {queueNo}</span>
-                      ) : bookedInfo ? (
-                        <span className="slot-owner" style={{ fontSize: '0.65rem', color: 'var(--primary)', marginTop: '0.15rem', fontWeight: 600, width: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {bookedInfo.name} (#{queueNo})
-                        </span>
-                      ) : (
-                        <span className="slot-status" style={{ fontSize: '0.65rem', opacity: 0.6, marginTop: '0.15rem', fontWeight: 500 }}>No. {queueNo}</span>
-                      )}
-                    </button>
-                  );
-                })}
+            {!isClosed && !isFull && (
+              <div style={{ 
+                marginTop: '1rem', 
+                padding: '0.75rem', 
+                backgroundColor: 'rgba(197, 168, 128, 0.05)', 
+                border: '1px dashed var(--primary)', 
+                borderRadius: 'var(--radius-sm)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                fontSize: '0.8rem',
+                color: 'var(--primary)'
+              }}>
+                <Ticket size={16} />
+                <span>Pelanggan ini akan mendapatkan tiket antrean **{manualSession === 'siang' ? 'S-' : 'M-'}{selectedCount + 1}**</span>
               </div>
-            </div>
+            )}
           </div>
 
           <div className="modal-footer">
             <button 
               type="button" 
               className="btn btn-secondary" 
-              style={{ width: 'auto', padding: '0.75rem 1.5rem' }}
+              style={{ width: 'auto', padding: '0.65rem 1.25rem' }}
               onClick={closeModal}
               disabled={isSavingManual}
             >
@@ -177,10 +204,10 @@ export default function ManualBookingModal({
             <button 
               type="submit" 
               className="btn" 
-              style={{ width: 'auto', padding: '0.75rem 1.5rem' }}
-              disabled={isSavingManual || isLoadingManualSlots || !manualTime}
+              style={{ width: 'auto', padding: '0.65rem 1.25rem' }}
+              disabled={isSavingManual || isClosed || isFull}
             >
-              {isSavingManual ? 'Menyimpan...' : 'Tambah Booking'}
+              {isSavingManual ? 'Mendaftarkan...' : 'Daftarkan Pelanggan'}
             </button>
           </div>
         </form>

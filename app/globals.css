@@ -1296,4 +1296,140 @@ a {
   }
 }
 
+/* Admin Dashboard Toolbar Layout Card */
+.admin-toolbar-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* Responsive Grid & Tab Switcher for Admin Bookings split layout */
+.bookings-tab-nav {
+  display: none;
+  gap: 0.5rem;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.35rem;
+  margin-bottom: 1rem;
+}
+
+.tab-nav-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 0.65rem 0.5rem;
+  font-size: 0.85rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.tab-nav-btn:hover {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.bookings-split-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.bookings-column {
+  display: flex !important; /* Always display columns side-by-side on desktop */
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.column-header-desktop {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.bookings-compact-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.empty-column-placeholder {
+  text-align: center;
+  padding: 3rem 1rem;
+  background-color: rgba(255, 255, 255, 0.01);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+/* Compact layout customization for desktop cards to prevent wrapping on wide view */
+@media (min-width: 992px) {
+  .booking-compact-card {
+    padding: 0.6rem 1rem;
+  }
+}
+
+/* Mobile Screen Layout Optimization (< 768px) */
+@media (max-width: 768px) {
+  .bookings-tab-nav {
+    display: flex; /* Show tabs switcher on mobile */
+  }
+
+  .bookings-split-container {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .bookings-column {
+    display: none !important; /* Hide column by default on mobile */
+  }
+
+  .bookings-column.active-column {
+    display: flex !important; /* Show active tab column */
+  }
+
+  .column-header-desktop {
+    display: none; /* Hide redundant column header on mobile as tab label is visible */
+  }
+  
+  .booking-compact-card {
+    padding: 0.5rem 0.65rem;
+  }
+  
+  .booking-card-mid-info {
+    gap: 0.5rem;
+  }
+}
+
+/* For extremely narrow screens, hide WhatsApp text string on mobile and just show icon */
+@media (max-width: 480px) {
+  .hide-on-mobile {
+    display: none !important;
+  }
+}
+
+
 

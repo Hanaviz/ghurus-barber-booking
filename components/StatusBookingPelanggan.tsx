@@ -4,10 +4,8 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { AlertCircle } from 'lucide-react';
 
-import { TIME_SLOTS, isSlotPast } from '@/lib/config';
 import StatusSearch from './status/StatusSearch';
 import BookingList from './status/BookingList';
-import RescheduleModal from './status/RescheduleModal';
 
 interface Booking {
   id: string;
@@ -15,7 +13,9 @@ interface Booking {
   whatsapp: string;
   booking_date: string;
   booking_time: string;
-  status: 'Menunggu' | 'Selesai' | 'Batal';
+  queue_number: number;
+  status: 'Menunggu' | 'Sedang Dicukur' | 'Selesai' | 'Batal';
+  session?: 'siang' | 'malam';
   created_at: string;
 }
 
@@ -28,88 +28,45 @@ export default function StatusBookingPelanggan() {
     return `${year}-${month}-${day}`;
   };
 
-  const handleDateClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    const input = e.currentTarget.querySelector('input[type="date"]') as HTMLInputElement;
-    if (input) {
-      try {
-        input.showPicker();
-      } catch (err) {
-        input.focus();
-        input.click();
-      }
-    }
-  };
-
   const [whatsappQuery, setWhatsappQuery] = useState('');
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchDone, setSearchDone] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-
-  // Reschedule Modal States
-  const [activeReschedule, setActiveReschedule] = useState<Booking | null>(null);
-  const [newDate, setNewDate] = useState('');
-  const [newTime, setNewTime] = useState('');
   
-  interface BookedSlot {
-    time: string;
-    name: string;
-  }
-  const [bookedSlots, setBookedSlots] = useState<BookedSlot[]>([]);
-  const [isLoadingSlots, setIsLoadingSlots] = useState(false);
-  const [isSavingReschedule, setIsSavingReschedule] = useState(false);
+  // Real-time Queue Tracking State (Dual Session)
+  const [siangCurrent, setSiangCurrent] = useState(0);
+  const [malamCurrent, setMalamCurrent] = useState(0);
   const [isEnvConfigured, setIsEnvConfigured] = useState(true);
 
   useEffect(() => {
-    setNewDate(getTodayString());
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     if (!url || !key || url.includes('your-project-id') || key.includes('your-supabase-anon-key')) {
       setIsEnvConfigured(false);
     }
+    
+    fetchTodayActiveQueue();
   }, []);
 
-  useEffect(() => {
-    if (!isEnvConfigured || !activeReschedule || !newDate) return;
+  const fetchTodayActiveQueue = async () => {
+    try {
+      const today = getTodayString();
+      const { data, error } = await supabase
+        .from('barber_schedule')
+        .select('siang_current, malam_current')
+        .eq('date', today)
+        .maybeSingle();
 
-    const fetchBookedSlots = async () => {
-      setIsLoadingSlots(true);
-      try {
-        const { data, error } = await supabase
-          .from('bookings')
-          .select('booking_time, name')
-          .eq('booking_date', newDate)
-          .neq('status', 'Batal');
-
-        if (error) throw error;
-
-        if (data) {
-          const slots: BookedSlot[] = data.map((item: any) => {
-            const timeStr = item.booking_time;
-            return {
-              time: timeStr ? timeStr.substring(0, 5).replace(':', '.') : '',
-              name: item.name
-            };
-          }).filter(slot => slot.time !== '');
-          
-          const currentFormattedTime = activeReschedule.booking_time.substring(0, 5).replace(':', '.');
-          if (newDate === activeReschedule.booking_date) {
-            const filteredSlots = slots.filter(s => s.time !== currentFormattedTime);
-            setBookedSlots(filteredSlots);
-          } else {
-            setBookedSlots(slots);
-          }
-        }
-      } catch (err: any) {
-        console.error("Gagal memuat slot kosong saat reschedule:", err);
-      } finally {
-        setIsLoadingSlots(false);
+      if (error) throw error;
+      if (data) {
+        setSiangCurrent(data.siang_current || 0);
+        setMalamCurrent(data.malam_current || 0);
       }
-    };
-
-    fetchBookedSlots();
-    setNewTime('');
-  }, [newDate, activeReschedule, isEnvConfigured]);
+    } catch (err) {
+      console.error("Gagal mengambil antrean berjalan hari ini:", err);
+    }
+  };
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,12 +85,15 @@ export default function StatusBookingPelanggan() {
 
     setIsSearching(true);
     try {
+      // Refresh antrean aktif di toko
+      await fetchTodayActiveQueue();
+
       const { data, error } = await supabase
         .from('bookings')
         .select('*')
         .eq('whatsapp', whatsappQuery.trim())
         .order('booking_date', { ascending: false })
-        .order('booking_time', { ascending: false });
+        .order('queue_number', { ascending: false });
 
       if (error) throw error;
 
@@ -150,7 +110,7 @@ export default function StatusBookingPelanggan() {
   };
 
   const handleCancelBooking = async (bookingId: string) => {
-    if (!window.confirm("Apakah Anda yakin ingin membatalkan jadwal booking ini?")) {
+    if (!window.confirm("Apakah Anda yakin ingin membatalkan antrean ini?")) {
       return;
     }
 
@@ -163,73 +123,17 @@ export default function StatusBookingPelanggan() {
 
       if (error) throw error;
 
-      setMessage({ type: 'success', text: 'Booking berhasil dibatalkan.' });
+      setMessage({ type: 'success', text: 'Antrean berhasil dibatalkan.' });
       setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: 'Batal' } : b));
     } catch (err: any) {
-      setMessage({ type: 'error', text: err.message || 'Gagal membatalkan booking.' });
-    }
-  };
-
-  const openRescheduleModal = (booking: Booking) => {
-    setActiveReschedule(booking);
-    setNewDate(booking.booking_date);
-    setNewTime(booking.booking_time.substring(0, 5).replace(':', '.'));
-    setMessage(null);
-  };
-
-  const handleSaveReschedule = async () => {
-    if (!activeReschedule) return;
-    if (!newDate) {
-      alert("Pilih tanggal baru.");
-      return;
-    }
-    if (!newTime) {
-      alert("Pilih jam baru.");
-      return;
-    }
-    if (isSlotPast(newDate, newTime)) {
-      alert("Waktu reschedule tersebut sudah terlewati. Silakan pilih jam lain.");
-      return;
-    }
-
-    setIsSavingReschedule(true);
-    setMessage(null);
-
-    try {
-      const { error } = await supabase
-        .from('bookings')
-        .update({
-          booking_date: newDate,
-          booking_time: newTime.replace('.', ':'),
-          status: 'Menunggu'
-        })
-        .eq('id', activeReschedule.id);
-
-      if (error) {
-        if (error.code === '23505') {
-          throw new Error("Maaf, slot waktu tersebut baru saja dipesan oleh orang lain. Silakan pilih waktu yang lain.");
-        }
-        throw error;
-      }
-
-      setMessage({ type: 'success', text: 'Jadwal booking berhasil diubah (reschedule).' });
-      
-      setBookings(prev => prev.map(b => 
-        b.id === activeReschedule.id 
-          ? { ...b, booking_date: newDate, booking_time: newTime.replace('.', ':') + ":00", status: 'Menunggu' } 
-          : b
-      ));
-
-      setActiveReschedule(null);
-    } catch (err: any) {
-      alert(err.message || 'Gagal mengubah jadwal.');
-    } finally {
-      setIsSavingReschedule(false);
+      setMessage({ type: 'error', text: err.message || 'Gagal membatalkan antrean.' });
     }
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
+      case 'Sedang Dicukur':
+        return <span className="badge" style={{ backgroundColor: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.3)', fontWeight: 700 }}>✂️ Sedang Dicukur</span>;
       case 'Menunggu':
         return <span className="badge badge-pending">Menunggu</span>;
       case 'Selesai':
@@ -272,30 +176,14 @@ export default function StatusBookingPelanggan() {
         handleSearch={handleSearch}
       />
 
-      <BookingList 
-        bookings={bookings}
-        formatDateIndo={formatDateIndo}
-        getStatusBadge={getStatusBadge}
-        openRescheduleModal={openRescheduleModal}
-        handleCancelBooking={handleCancelBooking}
-      />
-
-      {activeReschedule && (
-        <RescheduleModal 
-          activeReschedule={activeReschedule}
-          newDate={newDate}
-          setNewDate={setNewDate}
-          newTime={newTime}
-          setNewTime={setNewTime}
-          bookedSlots={bookedSlots}
-          isLoadingSlots={isLoadingSlots}
-          isSavingReschedule={isSavingReschedule}
-          TIME_SLOTS={TIME_SLOTS}
-          handleDateClick={handleDateClick}
-          isSlotPast={isSlotPast}
-          handleSaveReschedule={handleSaveReschedule}
-          closeModal={() => setActiveReschedule(null)}
-          getTodayString={getTodayString}
+      {searchDone && (
+        <BookingList 
+          bookings={bookings}
+          formatDateIndo={formatDateIndo}
+          getStatusBadge={getStatusBadge}
+          handleCancelBooking={handleCancelBooking}
+          siangCurrent={siangCurrent}
+          malamCurrent={malamCurrent}
         />
       )}
     </div>
