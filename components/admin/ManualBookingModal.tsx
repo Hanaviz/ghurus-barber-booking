@@ -44,67 +44,44 @@ export default function ManualBookingModal({
 
   return (
     <div className="modal-overlay">
-      <div className="modal-content" style={{ maxWidth: '480px' }}>
-        <div className="modal-header">
-          <h3 className="modal-title">Booking Manual (Walk-in)</h3>
-          <button className="modal-close" onClick={closeModal} type="button">
+      <div className="modal-content" style={{ maxWidth: '420px', padding: '1.25rem' }}>
+        <div className="modal-header" style={{ borderBottom: 'none', paddingBottom: '0.5rem', marginBottom: '0.5rem' }}>
+          <div>
+            <h3 className="modal-title" style={{ fontSize: '1.15rem', fontWeight: 800 }}>Booking Manual (Walk-in)</h3>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              Sesi {manualSession === 'siang' ? '☀️ Siang' : '🌙 Malam'} — Kuota: <strong style={{ color: isFull ? 'var(--danger)' : 'var(--text-main)' }}>{selectedCount}/{selectedMax}</strong>
+            </span>
+          </div>
+          <button className="modal-close" onClick={closeModal} type="button" style={{ top: '1.25rem', right: '1.25rem' }}>
             <X size={20} />
           </button>
         </div>
         
         <form onSubmit={handleAddManualBooking}>
-          <div className="modal-body">
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
-              Masukkan data pelanggan walk-in yang datang langsung ke toko untuk didaftarkan ke antrean sesi aktif hari ini.
-            </p>
-
-            {/* Live Queue Info Card */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: '0.75rem',
-              backgroundColor: 'rgba(255, 255, 255, 0.02)',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-md)',
-              padding: '0.75rem',
-              marginBottom: '1.25rem'
-            }}>
-              <div>
-                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase' }}>Sesi Booking</span>
-                <strong style={{ fontSize: '0.9rem', color: 'var(--primary)', textTransform: 'capitalize' }}>
-                  Sesi {manualSession === 'siang' ? '☀️ Siang' : '🌙 Malam'}
-                </strong>
-              </div>
-              <div>
-                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase' }}>Kuota Terisi</span>
-                <strong style={{ fontSize: '0.9rem', color: isFull ? 'var(--danger)' : 'var(--text-main)' }}>
-                  {selectedCount} / {selectedMax} Antrean
-                </strong>
-              </div>
-            </div>
-
+          <div className="modal-body" style={{ padding: 0 }}>
+            
             {isClosed ? (
-              <div className="alert alert-error" style={{ fontSize: '0.85rem', marginBottom: '1rem' }}>
-                Pendaftaran antrean sedang ditutup oleh owner. Silakan aktifkan status sesi aktif terlebih dahulu di toolbar.
+              <div className="alert alert-error" style={{ fontSize: '0.8rem', padding: '0.5rem 0.75rem', marginBottom: '0.75rem' }}>
+                Pendaftaran ditutup. Silakan aktifkan sesi di toolbar.
               </div>
             ) : isFull ? (
-              <div className="alert alert-error" style={{ fontSize: '0.85rem', marginBottom: '1rem' }}>
-                Kuota antrean Sesi {manualSession === 'siang' ? 'Siang' : 'Malam'} hari ini sudah penuh ({selectedMax} orang).
+              <div className="alert alert-error" style={{ fontSize: '0.8rem', padding: '0.5rem 0.75rem', marginBottom: '0.75rem' }}>
+                Kuota antrean Sesi {manualSession === 'siang' ? 'Siang' : 'Malam'} hari ini sudah penuh.
               </div>
             ) : null}
 
             {/* Session selector (only when both sessions are active) */}
             {sesiAktif === 'semua' && (
-              <div className="form-group" style={{ marginBottom: '1.25rem' }}>
-                <label className="form-label" style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>Pilih Sesi Booking</label>
+              <div className="form-group" style={{ marginBottom: '1rem' }}>
+                <label className="form-label" style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Pilih Sesi Booking</label>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   <button
                     type="button"
                     className="btn"
                     style={{ 
                       flex: 1, 
-                      height: '36px', 
-                      fontSize: '0.8rem', 
+                      height: '34px', 
+                      fontSize: '0.75rem', 
                       padding: 0,
                       backgroundColor: manualSession === 'siang' ? '#f59e0b' : 'rgba(255,255,255,0.02)',
                       color: manualSession === 'siang' ? '#000' : 'var(--text-muted)',
@@ -121,8 +98,8 @@ export default function ManualBookingModal({
                     className="btn"
                     style={{ 
                       flex: 1, 
-                      height: '36px', 
-                      fontSize: '0.8rem', 
+                      height: '34px', 
+                      fontSize: '0.75rem', 
                       padding: 0,
                       backgroundColor: manualSession === 'malam' ? '#8b5cf6' : 'rgba(255,255,255,0.02)',
                       color: manualSession === 'malam' ? '#fff' : 'var(--text-muted)',
@@ -138,10 +115,10 @@ export default function ManualBookingModal({
               </div>
             )}
 
-            <div className="form-group">
-              <label className="form-label" htmlFor="manualName">Nama Pelanggan</label>
+            <div className="form-group" style={{ marginBottom: '1rem' }}>
+              <label className="form-label" htmlFor="manualName" style={{ fontSize: '0.75rem', marginBottom: '0.25rem' }}>Nama Pelanggan</label>
               <div className="input-icon-wrapper">
-                <User size={18} />
+                <User size={16} />
                 <input
                   id="manualName"
                   type="text"
@@ -151,14 +128,15 @@ export default function ManualBookingModal({
                   onChange={(e) => setManualName(e.target.value)}
                   disabled={isSavingManual || isClosed || isFull}
                   required
+                  style={{ height: '36px', fontSize: '0.85rem' }}
                 />
               </div>
             </div>
 
-            <div className="form-group">
-              <label className="form-label" htmlFor="manualWhatsapp">Nomor WhatsApp</label>
+            <div className="form-group" style={{ marginBottom: '1.25rem' }}>
+              <label className="form-label" htmlFor="manualWhatsapp" style={{ fontSize: '0.75rem', marginBottom: '0.25rem' }}>Nomor WhatsApp</label>
               <div className="input-icon-wrapper">
-                <Phone size={18} />
+                <Phone size={16} />
                 <input
                   id="manualWhatsapp"
                   type="tel"
@@ -168,46 +146,21 @@ export default function ManualBookingModal({
                   onChange={(e) => setManualWhatsapp(e.target.value)}
                   disabled={isSavingManual || isClosed || isFull}
                   required
+                  style={{ height: '36px', fontSize: '0.85rem' }}
                 />
               </div>
             </div>
 
-            {!isClosed && !isFull && (
-              <div style={{ 
-                marginTop: '1rem', 
-                padding: '0.75rem', 
-                backgroundColor: 'rgba(197, 168, 128, 0.05)', 
-                border: '1px dashed var(--primary)', 
-                borderRadius: 'var(--radius-sm)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                fontSize: '0.8rem',
-                color: 'var(--primary)'
-              }}>
-                <Ticket size={16} />
-                <span>Pelanggan ini akan mendapatkan tiket antrean **{manualSession === 'siang' ? 'S-' : 'M-'}{selectedCount + 1}**</span>
-              </div>
-            )}
           </div>
 
-          <div className="modal-footer">
-            <button 
-              type="button" 
-              className="btn btn-secondary" 
-              style={{ width: 'auto', padding: '0.65rem 1.25rem' }}
-              onClick={closeModal}
-              disabled={isSavingManual}
-            >
-              Batal
-            </button>
+          <div className="modal-footer" style={{ borderTop: 'none', padding: 0, marginTop: '0.25rem' }}>
             <button 
               type="submit" 
               className="btn" 
-              style={{ width: 'auto', padding: '0.65rem 1.25rem' }}
+              style={{ width: '100%', height: '40px', fontSize: '0.85rem', fontWeight: 700 }}
               disabled={isSavingManual || isClosed || isFull}
             >
-              {isSavingManual ? 'Mendaftarkan...' : 'Daftarkan Pelanggan'}
+              Daftarkan Pelanggan
             </button>
           </div>
         </form>

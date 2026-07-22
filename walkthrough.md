@@ -1,22 +1,20 @@
-# Walkthrough: Transformasi Fitur Menjadi "Kelola Tiket"
+# Walkthrough: Penghapusan Ekspektasi Nomor Tiket pada Tombol Utama
 
-Kami telah mentransformasi fitur pencarian tiket dari kata lama *"Cek & Reschedule"* menjadi **"Kelola Tiket"** yang jauh lebih intuitif, personal, dan bermanfaat bagi pelanggan.
+Kami telah menerapkan praktek terbaik pada form pendaftaran antrean publik (`BookingForm.tsx`) dan modal admin (`ManualBookingModal.tsx`) dengan membuat teks tombol pendaftaran menjadi statis.
 
 ---
 
 ## 1. Rincian Pembaruan
 
-1. **Navigasi Header & Footer (`NavigasiBar.tsx` & `app/layout.tsx`)**:
-   * Mengganti label navigasi dari `Cek & Reschedule` / `Cek Status` menjadi **`Kelola Tiket`**.
-2. **Kartu Pencarian Tiket (`StatusSearch.tsx`)**:
-   * Ikon diperbarui menggunakan **`Ticket`** (`🎟️`).
-   * Judul utama: **`Kelola Tiket Saya`**.
-   * Sub-judul: `Masukkan nomor WhatsApp Anda untuk memantau sisa antrean atau membatalkan tiket.`
-3. **Hasil Pencarian Personal (`BookingList.tsx`)**:
-   * Menampilkan header **`Tiket Antrean: [Nama]`**.
-   * Menampilkan informasi tiket berjalan personal, sisa antrean, estimasi waktu pangkas, dan tombol pembatalan mandiri.
-4. **Sambungan Sukses Booking (`BookingSuccess.tsx`)**:
-   * Tombol tindakan di layar pendaftaran sukses kini mengarahkan langsung ke **`Kelola Tiket Saya`**.
+1. **Tombol Form Pendaftaran Publik (`BookingForm.tsx`)**:
+   * Mengubah teks tombol dinamis `Ambil Tiket Antrean (S-X/M-X)` menjadi statis:
+     > **`Ambil Tiket Antrean`**
+2. **Tombol Modal Booking Manual Admin (`ManualBookingModal.tsx`)**:
+   * Mengubah teks tombol dinamis menjadi statis:
+     > **`Daftarkan Pelanggan`**
+3. **Mengapa Ini Praktik Terbaik**:
+   * **Menghindari Konflik Visual**: Jika terdapat banyak pengguna yang menekan tombol bersamaan, tidak ada pengguna yang merasa kecewa/bingung karena nomor tiket di tombol berbeda dengan nomor tiket final di layar sukses.
+   * **Lebih Rapi**: Teks tombol menjadi lebih pendek, seragam, dan profesional.
 
 ---
 

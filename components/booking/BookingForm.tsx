@@ -105,83 +105,6 @@ export default function BookingForm({
         </p>
       </div>
 
-      {/* Real-time Queue Board (Dual Session Status) */}
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '0.75rem',
-        backgroundColor: 'rgba(255, 255, 255, 0.02)',
-        border: '1px solid var(--border)',
-        borderRadius: 'var(--radius-md)',
-        padding: '1rem',
-        marginBottom: '1.5rem'
-      }}>
-        
-        {/* Status Sesi Siang */}
-        {(sesiAktif === 'semua' || sesiAktif === 'siang') && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '0.5rem', alignItems: 'center' }} className="grid-responsive-3">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Sun size={18} style={{ color: '#f59e0b' }} />
-              <div>
-                <strong style={{ fontSize: '0.85rem', color: '#f59e0b', display: 'block' }}>Sesi Siang</strong>
-                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                  {isSiangExpired ? '🔴 Pendaftaran Tutup (Sudah Malam)' : `Buka Jam ${siangBuka.replace(':', '.')} WIB`}
-                </span>
-              </div>
-            </div>
-            <div>
-              <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase' }}>Sedang Dicukur</span>
-              <strong style={{ fontSize: '1rem', color: '#f59e0b' }}>S-{siangCurrent}</strong>
-            </div>
-            <div>
-              <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase' }}>Kuota</span>
-              <strong style={{ fontSize: '1rem', color: (siangCount >= siangMax || isSiangExpired) ? 'var(--danger)' : 'var(--text-main)' }}>
-                {isSiangExpired ? 'Tutup' : `${siangCount} / ${siangMax}`}
-              </strong>
-            </div>
-          </div>
-        )}
-
-        {/* Separator if both sessions are shown */}
-        {sesiAktif === 'semua' && (
-          <div style={{ height: '1px', backgroundColor: 'rgba(255, 255, 255, 0.05)', margin: '0.25rem 0' }} />
-        )}
-
-        {/* Status Sesi Malam */}
-        {(sesiAktif === 'semua' || sesiAktif === 'malam') && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '0.5rem', alignItems: 'center' }} className="grid-responsive-3">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Moon size={18} style={{ color: '#8b5cf6' }} />
-              <div>
-                <strong style={{ fontSize: '0.85rem', color: '#a78bfa', display: 'block' }}>Sesi Malam</strong>
-                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                  {isMalamExpired ? '🔴 Pendaftaran Tutup' : `Buka Jam ${malamBuka.replace(':', '.')} WIB`}
-                </span>
-              </div>
-            </div>
-            <div>
-              <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase' }}>Sedang Dicukur</span>
-              <strong style={{ fontSize: '1rem', color: '#8b5cf6' }}>M-{malamCurrent}</strong>
-            </div>
-            <div>
-              <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase' }}>Kuota</span>
-              <strong style={{ fontSize: '1rem', color: (malamCount >= malamMax || isMalamExpired) ? 'var(--danger)' : 'var(--text-main)' }}>
-                {isMalamExpired ? 'Tutup' : `${malamCount} / ${malamMax}`}
-              </strong>
-            </div>
-          </div>
-        )}
-
-        {/* Closed Info */}
-        {isClosed && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0.5rem 0', color: 'var(--danger)', fontWeight: 700, gap: '0.35rem' }}>
-            <AlertCircle size={16} />
-            <span>🔴 PENDAFTARAN ANTREAN HARI INI DITUTUP</span>
-          </div>
-        )}
-
-      </div>
-
       {message && (
         <div className={`alert ${message.type === 'success' ? 'alert-success' : 'alert-error'}`} style={{ marginBottom: '1.5rem' }}>
           {message.type === 'success' ? <CheckCircle2 size={20} /> : <AlertCircle size={20} />}
@@ -217,10 +140,14 @@ export default function BookingForm({
       ) : (
         <form onSubmit={handleSubmit}>
           
-          {/* Sesi Selector Cards (Interactive UI) */}
+          {/* Sesi Selector Cards (Unified Session Info & Selector UI) */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem' }}>
             <label className="form-label">Pilih Sesi Mencukur</label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }} className="grid-responsive-2">
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: (sesiAktif === 'siang' || sesiAktif === 'malam') ? '1fr' : '1fr 1fr', 
+              gap: '0.75rem' 
+            }} className="grid-responsive-2">
               
               {/* Sesi Siang Card option */}
               {(sesiAktif === 'semua' || sesiAktif === 'siang') && (
@@ -232,27 +159,31 @@ export default function BookingForm({
                     border: session === 'siang' ? '2px solid #f59e0b' : '1px solid var(--border)',
                     backgroundColor: session === 'siang' ? 'rgba(245, 158, 11, 0.04)' : 'rgba(255, 255, 255, 0.01)',
                     cursor: (sesiAktif === 'semua' && !isSiangExpired && siangCount < siangMax) ? 'pointer' : 'not-allowed',
-                    opacity: (siangCount >= siangMax || isSiangExpired) ? 0.5 : 1,
+                    opacity: (siangCount >= siangMax || isSiangExpired) ? 0.55 : 1,
                     transition: 'all 0.2s ease',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '0.25rem'
+                    gap: '0.35rem'
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                    <span style={{ fontSize: '0.9rem', fontWeight: 700, color: session === 'siang' ? '#f59e0b' : 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <span style={{ fontSize: '0.9rem', fontWeight: 800, color: session === 'siang' ? '#f59e0b' : 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                       <Sun size={16} /> Siang
                     </span>
                     {isSiangExpired ? (
-                      <span style={{ fontSize: '0.65rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', padding: '0.1rem 0.35rem', borderRadius: 'var(--radius-sm)', fontWeight: 700 }}>Sudah Lewat</span>
+                      <span style={{ fontSize: '0.62rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', padding: '0.1rem 0.35rem', borderRadius: 'var(--radius-sm)', fontWeight: 700 }}>Tutup</span>
                     ) : siangCount >= siangMax ? (
-                      <span style={{ fontSize: '0.65rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', padding: '0.1rem 0.35rem', borderRadius: 'var(--radius-sm)', fontWeight: 700 }}>Penuh</span>
-                    ) : null}
+                      <span style={{ fontSize: '0.62rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', padding: '0.1rem 0.35rem', borderRadius: 'var(--radius-sm)', fontWeight: 700 }}>Penuh</span>
+                    ) : (
+                      <span style={{ fontSize: '0.62rem', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: 'var(--success)', padding: '0.1rem 0.35rem', borderRadius: 'var(--radius-sm)', fontWeight: 700 }}>Buka</span>
+                    )}
                   </div>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Mulai Pukul {siangBuka.replace(':', '.')} WIB</span>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                    {isSiangExpired ? 'Tutup Pendaftaran' : `Tersedia: ${Math.max(0, siangMax - siangCount)} Slot`}
-                  </span>
+                  
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: '0.15rem', marginTop: '0.15rem' }}>
+                    <div>Mulai: <strong>{siangBuka.replace(':', '.')} WIB</strong></div>
+                    <div>Dicukur: <strong style={{ color: '#f59e0b' }}>S-{siangCurrent}</strong></div>
+                    <div>Sisa Kuota: <strong>{isSiangExpired ? '0' : Math.max(0, siangMax - siangCount)} Slot</strong> <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)' }}>({siangCount}/{siangMax})</span></div>
+                  </div>
                 </div>
               )}
 
@@ -266,27 +197,31 @@ export default function BookingForm({
                     border: session === 'malam' ? '2px solid #8b5cf6' : '1px solid var(--border)',
                     backgroundColor: session === 'malam' ? 'rgba(139, 92, 246, 0.04)' : 'rgba(255, 255, 255, 0.01)',
                     cursor: (sesiAktif === 'semua' && !isMalamExpired && malamCount < malamMax) ? 'pointer' : 'not-allowed',
-                    opacity: (malamCount >= malamMax || isMalamExpired) ? 0.5 : 1,
+                    opacity: (malamCount >= malamMax || isMalamExpired) ? 0.55 : 1,
                     transition: 'all 0.2s ease',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '0.25rem'
+                    gap: '0.35rem'
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                    <span style={{ fontSize: '0.9rem', fontWeight: 700, color: session === 'malam' ? '#a78bfa' : 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <span style={{ fontSize: '0.9rem', fontWeight: 800, color: session === 'malam' ? '#a78bfa' : 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                       <Moon size={16} /> Malam
                     </span>
                     {isMalamExpired ? (
-                      <span style={{ fontSize: '0.65rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', padding: '0.1rem 0.35rem', borderRadius: 'var(--radius-sm)', fontWeight: 700 }}>Tutup</span>
+                      <span style={{ fontSize: '0.62rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', padding: '0.1rem 0.35rem', borderRadius: 'var(--radius-sm)', fontWeight: 700 }}>Tutup</span>
                     ) : malamCount >= malamMax ? (
-                      <span style={{ fontSize: '0.65rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', padding: '0.1rem 0.35rem', borderRadius: 'var(--radius-sm)', fontWeight: 700 }}>Penuh</span>
-                    ) : null}
+                      <span style={{ fontSize: '0.62rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', padding: '0.1rem 0.35rem', borderRadius: 'var(--radius-sm)', fontWeight: 700 }}>Penuh</span>
+                    ) : (
+                      <span style={{ fontSize: '0.62rem', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: 'var(--success)', padding: '0.1rem 0.35rem', borderRadius: 'var(--radius-sm)', fontWeight: 700 }}>Buka</span>
+                    )}
                   </div>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Mulai Pukul {malamBuka.replace(':', '.')} WIB</span>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                    {isMalamExpired ? 'Tutup Pendaftaran' : `Tersedia: ${Math.max(0, malamMax - malamCount)} Slot`}
-                  </span>
+                  
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: '0.15rem', marginTop: '0.15rem' }}>
+                    <div>Mulai: <strong>{malamBuka.replace(':', '.')} WIB</strong></div>
+                    <div>Dicukur: <strong style={{ color: '#a78bfa' }}>M-{malamCurrent}</strong></div>
+                    <div>Sisa Kuota: <strong>{isMalamExpired ? '0' : Math.max(0, malamMax - malamCount)} Slot</strong> <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)' }}>({malamCount}/{malamMax})</span></div>
+                  </div>
                 </div>
               )}
 
@@ -330,27 +265,7 @@ export default function BookingForm({
             </p>
           </div>
 
-          {/* Ticket preview notification */}
-          {!isSelectedFull && (
-            <div style={{ 
-              marginTop: '1.25rem', 
-              marginBottom: '1.5rem',
-              padding: '0.75rem 1rem', 
-              backgroundColor: session === 'malam' ? 'rgba(139, 92, 246, 0.04)' : 'rgba(245, 158, 11, 0.04)', 
-              border: '1px dashed ' + (session === 'malam' ? '#8b5cf6' : '#f59e0b'), 
-              borderRadius: 'var(--radius-sm)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              fontSize: '0.85rem',
-              color: session === 'malam' ? '#a78bfa' : '#f59e0b'
-            }}>
-              <CheckSquare size={16} />
-              <span>
-                Anda mendaftar sebagai tiket antrean **{session === 'siang' ? 'S-' : 'M-'}{selectedCount + 1}** hari ini.
-              </span>
-            </div>
-          )}
+
 
           {isSelectedFull ? (
             <div className="alert alert-error" style={{ marginBottom: '1rem', fontSize: '0.85rem' }}>
@@ -367,7 +282,7 @@ export default function BookingForm({
               }}
               disabled={isSubmitting || isLoadingSlots || !isEnvConfigured}
             >
-              {isSubmitting ? 'Mengambil Tiket...' : `Ambil Tiket Antrean (${session === 'siang' ? 'S-' : 'M-'}${selectedCount + 1})`}
+              {isSubmitting ? 'Mengambil Tiket...' : 'Ambil Tiket Antrean'}
             </button>
           )}
         </form>
