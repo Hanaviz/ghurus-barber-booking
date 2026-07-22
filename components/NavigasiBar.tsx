@@ -86,7 +86,7 @@ export default function NavigasiBar() {
                   Booking Baru
                 </Link>
                 <Link href="/booking-status" className={`nav-link ${pathname === '/booking-status' ? 'active' : ''}`}>
-                  Cek & Reschedule
+                  Kelola Tiket
                 </Link>
                 <Link href="/admin" className="nav-btn-admin">
                   Admin Panel
@@ -175,7 +175,7 @@ export default function NavigasiBar() {
                 className={`sidebar-link ${pathname === '/booking-status' ? 'active' : ''}`}
                 onClick={closeSidebar}
               >
-                Cek & Reschedule
+                Kelola Tiket
               </Link>
               <div style={{ marginTop: '2rem', borderTop: '1px solid var(--border)', paddingTop: '1.5rem' }}>
                 <Link 

@@ -90,7 +90,7 @@ export default function BookingSuccess({
             color: isMalam ? '#fff' : '#000'
           }}
         >
-          Pantau Antrean Live
+          Kelola Tiket Saya
         </Link>
       </div>
     </div>

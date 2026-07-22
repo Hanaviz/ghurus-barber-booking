@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { Search, Phone, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Search, Phone, Ticket, CheckCircle2, AlertCircle } from 'lucide-react';
 
 interface StatusSearchProps {
   whatsappQuery: string;
@@ -29,10 +29,10 @@ export default function StatusSearch({
           color: 'var(--primary)',
           marginBottom: '1rem'
         }}>
-          <RefreshCw size={32} />
+          <Ticket size={32} />
         </div>
-        <h1 className="card-title">Cek & Reschedule</h1>
-        <p className="card-subtitle">Cari booking Anda dan sesuaikan kembali jadwal pangkas jika ada kendala</p>
+        <h1 className="card-title">Kelola Tiket Saya</h1>
+        <p className="card-subtitle">Masukkan nomor WhatsApp Anda untuk memantau sisa antrean atau membatalkan tiket</p>
       </div>
 
       {message && (

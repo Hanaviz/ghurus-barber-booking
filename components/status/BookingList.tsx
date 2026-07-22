@@ -220,7 +220,7 @@ export default function BookingList({
   return (
     <div style={{ marginTop: '2rem', animation: 'slideUp 0.3s ease' }}>
       <h2 style={{ fontSize: '1.4rem', marginBottom: '1.25rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem', fontFamily: "'Playfair Display', serif", fontWeight: 700 }}>
-        Status Antrean: <span style={{ color: 'var(--primary)' }}>{bookings[0].name}</span>
+        Tiket Antrean: <span style={{ color: 'var(--primary)' }}>{bookings[0].name}</span>
       </h2>
       
       {/* 1. SEKSI ANTREAN HARI INI */}

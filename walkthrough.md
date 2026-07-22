@@ -1,16 +1,22 @@
-# Walkthrough: Penambahan Alert Banner Peringatan Kata Sandi Salah pada Form Login Admin
+# Walkthrough: Transformasi Fitur Menjadi "Kelola Tiket"
 
-Kami telah memperbarui komponen `LoginForm.tsx` dan `HalamanAdminUtama.tsx` agar ketika kata sandi yang dimasukkan salah, peringatan **`⚠️ Password admin salah! Silakan periksa kembali.`** langsung tampil secara jelas dan tegas di atas kolom kata sandi.
+Kami telah mentransformasi fitur pencarian tiket dari kata lama *"Cek & Reschedule"* menjadi **"Kelola Tiket"** yang jauh lebih intuitif, personal, dan bermanfaat bagi pelanggan.
 
 ---
 
 ## 1. Rincian Pembaruan
 
-1. **Alert Banner Merah di Form Login (`LoginForm.tsx`)**:
-   * Ketika tombol **MASUK KE DASHBOARD** diklik dengan kata sandi yang salah, kotak alert merah (*danger alert*) langsung muncul tepat di atas kolom kata sandi:
-     > ⚠️ **Password admin salah! Silakan periksa kembali.**
-2. **Fitur Ikon Mata (`Eye`/`EyeOff`)**:
-   * Pengguna dapat mengklik ikon mata di sisi kanan kolom kata sandi untuk memeriksa huruf/karakter yang sedang diketik secara transparan.
+1. **Navigasi Header & Footer (`NavigasiBar.tsx` & `app/layout.tsx`)**:
+   * Mengganti label navigasi dari `Cek & Reschedule` / `Cek Status` menjadi **`Kelola Tiket`**.
+2. **Kartu Pencarian Tiket (`StatusSearch.tsx`)**:
+   * Ikon diperbarui menggunakan **`Ticket`** (`🎟️`).
+   * Judul utama: **`Kelola Tiket Saya`**.
+   * Sub-judul: `Masukkan nomor WhatsApp Anda untuk memantau sisa antrean atau membatalkan tiket.`
+3. **Hasil Pencarian Personal (`BookingList.tsx`)**:
+   * Menampilkan header **`Tiket Antrean: [Nama]`**.
+   * Menampilkan informasi tiket berjalan personal, sisa antrean, estimasi waktu pangkas, dan tombol pembatalan mandiri.
+4. **Sambungan Sukses Booking (`BookingSuccess.tsx`)**:
+   * Tombol tindakan di layar pendaftaran sukses kini mengarahkan langsung ke **`Kelola Tiket Saya`**.
 
 ---
 

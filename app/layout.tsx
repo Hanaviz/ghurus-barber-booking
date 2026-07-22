@@ -106,7 +106,7 @@ export default function RootLayout({
               <div className="footer-bottom-links hide-on-mobile">
                 <a href="/admin" className="footer-bottom-link">Admin Portal</a>
                 <a href="/" className="footer-bottom-link">Booking Baru</a>
-                <a href="/booking-status" className="footer-bottom-link">Cek Status</a>
+                <a href="/booking-status" className="footer-bottom-link">Kelola Tiket</a>
               </div>
             </div>
           </footer>
