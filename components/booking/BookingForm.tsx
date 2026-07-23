@@ -113,29 +113,23 @@ export default function BookingForm({
       )}
       
       {isClosed ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          <div className="alert alert-error" style={{ 
-            padding: '1.5rem', 
-            display: 'flex', 
-            flexDirection: 'column', 
-            alignItems: 'center', 
-            textAlign: 'center', 
-            gap: '0.5rem',
-            backgroundColor: 'rgba(239, 68, 68, 0.05)',
-            borderColor: 'rgba(239, 68, 68, 0.2)'
-          }}>
-            <AlertCircle size={32} style={{ color: 'var(--danger)' }} />
-            <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: 0 }}>Pendaftaran Antrean Baru Ditutup</h3>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0, lineHeight: 1.5 }}>
-              Maaf, saat ini pendaftaran tiket antrean online BARU sedang ditutup.
-              {todayBookings.length > 0 && " Tiket antrean yang sudah terdaftar sebelumnya tetap tersimpan dan diproses seperti biasa."}
-            </p>
-            <div style={{ marginTop: '0.35rem' }}>
-              <Link href="/booking-status" style={{ fontSize: '0.82rem', color: 'var(--primary)', fontWeight: 700, textDecoration: 'underline' }}>
-                🔍 Klik di sini untuk Cek Status Tiket Anda
-              </Link>
-            </div>
-          </div>
+        <div className="alert alert-error" style={{ 
+          padding: '1.25rem', 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          textAlign: 'center', 
+          gap: '0.35rem',
+          backgroundColor: 'rgba(239, 68, 68, 0.05)',
+          borderColor: 'rgba(239, 68, 68, 0.2)',
+          borderRadius: 'var(--radius-md)',
+          marginBottom: '0.5rem'
+        }}>
+          <AlertCircle size={24} style={{ color: 'var(--danger)' }} />
+          <h3 style={{ fontSize: '0.95rem', fontWeight: 700, margin: 0 }}>Pendaftaran Tutup</h3>
+          <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: 0, lineHeight: 1.4 }}>
+            Maaf, pendaftaran antrean baru hari ini sudah ditutup.
+          </p>
         </div>
       ) : (
         <form onSubmit={handleSubmit}>
@@ -505,7 +499,7 @@ export default function BookingForm({
             textDecoration: 'none'
           }}
         >
-          <Search size={14} /> Pantau & Lacak Status Tiket Anda
+          <Search size={14} /> Kelola Tiket Saya
         </Link>
       </div>
     </div>

@@ -63,7 +63,7 @@ export default function Toolbar({
   const isMalamActive = localSesiAktif === 'semua' || localSesiAktif === 'malam';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
       
       {/* 1. Pengaturan Operasional Card */}
       <div className="admin-toolbar-card">

@@ -1,20 +1,15 @@
-# Walkthrough: Penghapusan Ekspektasi Nomor Tiket pada Tombol Utama
+# Walkthrough: Penambahan Jarak Antara Tombol Booking Manual & Card Antrean
 
-Kami telah menerapkan praktek terbaik pada form pendaftaran antrean publik (`BookingForm.tsx`) dan modal admin (`ManualBookingModal.tsx`) dengan membuat teks tombol pendaftaran menjadi statis.
+Kami telah menambahkan jarak vertikal yang proporsional antara tombol **Booking Manual (Walk-in)** dengan **Card Daftar Antrean / Status Antrean** pada Dashboard Admin untuk estetika tata letak yang lebih rapi.
 
 ---
 
 ## 1. Rincian Pembaruan
 
-1. **Tombol Form Pendaftaran Publik (`BookingForm.tsx`)**:
-   * Mengubah teks tombol dinamis `Ambil Tiket Antrean (S-X/M-X)` menjadi statis:
-     > **`Ambil Tiket Antrean`**
-2. **Tombol Modal Booking Manual Admin (`ManualBookingModal.tsx`)**:
-   * Mengubah teks tombol dinamis menjadi statis:
-     > **`Daftarkan Pelanggan`**
-3. **Mengapa Ini Praktik Terbaik**:
-   * **Menghindari Konflik Visual**: Jika terdapat banyak pengguna yang menekan tombol bersamaan, tidak ada pengguna yang merasa kecewa/bingung karena nomor tiket di tombol berbeda dengan nomor tiket final di layar sukses.
-   * **Lebih Rapi**: Teks tombol menjadi lebih pendek, seragam, dan profesional.
+1. **Penyesuaian Jarak Tata Letak (`Toolbar.tsx`)**:
+   * Menambahkan `marginBottom: '1.5rem'` (setara `24px`) pada container pembungkus utama komponen Toolbar.
+2. **Dampak**:
+   * Tombol *Booking Manual* dan *Card Antrean* (baik saat kosong maupun saat berisi tabel data antrean) kini memiliki pembatas jarak vertikal yang proporsional dan tidak lagi saling menempel rapat.
 
 ---
 
