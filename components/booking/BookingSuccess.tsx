@@ -33,7 +33,7 @@ export default function BookingSuccess({
       </h2>
       
       <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', maxWidth: '420px', margin: '0 auto 1.75rem auto', lineHeight: '1.6' }}>
-        Tiket antrean Anda di <strong>Ghurus Barber Clinic</strong> berhasil dicadangkan. Silakan pantau nomor antrean berjalan secara langsung melalui tautan status di bawah.
+        Selamat anda berhasil mendapatkan tiket!. Ketuk <strong>Kelola Tiket Saya</strong> di bawah untuk  mengelola antrean Anda hari ini.
       </p>
 
       {/* Ticket Queue Card */}
@@ -68,30 +68,42 @@ export default function BookingSuccess({
         </div>
       </div>
       
-      <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-        <button 
-          onClick={handleResetForm}
-          className="btn btn-secondary" 
-          style={{ width: 'auto', padding: '0.75rem 1.75rem', fontWeight: 600 }}
-        >
-          Pendaftaran Baru
-        </button>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center', justifyContent: 'center' }}>
         <Link 
           href="/booking-status"
           className="btn" 
           style={{ 
-            width: 'auto', 
-            padding: '0.75rem 1.75rem', 
+            width: '100%',
+            maxWidth: '320px',
+            padding: '0.85rem 1.75rem', 
             display: 'inline-flex', 
             alignItems: 'center', 
             justifyContent: 'center', 
             fontWeight: 700,
             backgroundColor: sessionColor,
-            color: isMalam ? '#fff' : '#000'
+            color: isMalam ? '#fff' : '#000',
+            borderRadius: 'var(--radius-md)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
           }}
         >
           Kelola Tiket Saya
         </Link>
+        <button 
+          onClick={handleResetForm}
+          style={{ 
+            background: 'none',
+            border: 'none',
+            color: 'var(--text-muted)',
+            fontSize: '0.85rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+            textDecoration: 'underline',
+            transition: 'color 0.2s ease',
+            padding: '0.25rem 0.5rem'
+          }}
+        >
+          Pendaftaran Baru
+        </button>
       </div>
     </div>
   );

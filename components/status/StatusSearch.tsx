@@ -32,7 +32,7 @@ export default function StatusSearch({
           <Ticket size={32} />
         </div>
         <h1 className="card-title">Kelola Tiket Saya</h1>
-        <p className="card-subtitle">Masukkan nomor WhatsApp Anda untuk memantau sisa antrean atau membatalkan tiket</p>
+        <p className="card-subtitle">Masukkan nomor WhatsApp Anda untuk mengelola tiket booking dan riwayat antrean Anda</p>
       </div>
 
       {message && (
